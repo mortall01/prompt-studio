@@ -1,0 +1,1595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Press+Start+2P&family=VT323&family=Special+Elite&family=Comic+Neue:wght@700&family=Fredoka:wght@500;600&family=Patrick+Hand&family=Poppins:wght@400;600&family=Rubik:wght@400;600&family=Nunito:wght@400;700&family=Lilita+One&family=Bungee&family=Bangers&family=Silkscreen:wght@400;700&family=Caveat:wght@500;700&family=Creepster&display=swap">
+<style>
+/* Layout: studio in three glass columns — design | preview, prompt, voice | download, settings */
+:root{
+  --bg:#090e19; --glass-a:rgba(32,42,66,.58); --glass-b:rgba(17,24,40,.62); --well:rgba(6,10,20,.55);
+  --line:rgba(255,255,255,.075); --line-2:rgba(255,255,255,.14); --fg:#e7ebf5; --muted:#8a94aa; --dim:#5d667c;
+  --accent:#9fb1ff; --accent-strong:#7f96ff; --ok:#5fd4a6; --warn:#f2b25c; --err:#ff7a86;
+  --ui:"Inter Tight",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;color:var(--fg);font:14px/1.45 var(--ui);-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1100px 620px at 18% -12%,#17233d 0%,transparent 62%),radial-gradient(900px 560px at 100% 0%,#131d35 0%,transparent 60%),var(--bg);background-attachment:fixed}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.i{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* top bar */
+.topbar{margin:14px max(16px,1.6vw) 0;padding:12px 18px;display:flex;align-items:center;gap:12px;border-radius:18px;background:linear-gradient(180deg,var(--glass-a),var(--glass-b));border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.brand{display:flex;align-items:center;gap:11px;font-size:19px;font-weight:600;letter-spacing:-.02em}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:#f2f4fa;display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.brand-mark svg{width:24px;height:24px}
+.brand b{color:var(--accent);font-weight:700}
+.modebar{margin-left:auto;display:flex;align-items:center;gap:10px}
+
+/* columns */
+.app{display:grid;grid-template-columns:288px minmax(0,1fr) 306px;gap:18px;padding:18px max(16px,1.6vw) 40px;align-items:start}
+@media (max-width:1240px){.app{grid-template-columns:270px minmax(0,1fr)} .right{grid-column:1/-1;display:grid!important;grid-template-columns:1fr 1fr;align-items:start}}
+@media (max-width:820px){.app{grid-template-columns:1fr} .right{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.card{background:linear-gradient(180deg,var(--glass-a),var(--glass-b));border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:16px;min-width:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 14px 34px rgba(0,0,0,.22)}
+.card-h{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;letter-spacing:-.005em}
+.card-h .i{color:var(--muted)}
+.card-h .sp{flex:1}
+.icon-btn{width:30px;height:30px;border-radius:9px;border:1px solid transparent;background:none;color:var(--muted);display:grid;place-items:center}
+.icon-btn:hover{color:var(--fg);background:rgba(255,255,255,.05);border-color:var(--line)}
+.pill{font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--line-2);color:var(--muted);white-space:nowrap;font-weight:400}
+.pill.ok{color:var(--ok);border-color:rgba(95,212,166,.35)} .pill.busy{color:var(--warn);border-color:rgba(242,178,92,.35)}
+.hr{height:1px;background:var(--line);margin:2px 0}
+.muted{color:var(--muted);font-size:13px;margin:0}
+.hint{font-size:12px;color:var(--dim);margin:0;line-height:1.5}
+[hidden]{display:none!important}
+
+/* form controls */
+.f{display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:var(--muted)}
+input[type=text],input[type=password],input[type=number],select,textarea{background:var(--well);border:1px solid var(--line);border-radius:11px;padding:0 12px;height:40px;width:100%;color:var(--fg);transition:border-color .15s}
+textarea{height:auto;min-height:104px;padding:12px 14px;resize:vertical;line-height:1.6;font-size:14.5px}
+select{appearance:none;-webkit-appearance:none;padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aab3c7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 9 5-5 5 5M7 15l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+select option,select optgroup{background:#141b2c;color:var(--fg)}
+input:hover,select:hover,textarea:hover{border-color:var(--line-2)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=number]{font-family:var(--mono);font-size:13px;text-align:center;padding:0 6px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:rgba(255,255,255,.12)}
+input[type=range]::-moz-range-track{height:3px;border-radius:3px;background:rgba(255,255,255,.12)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#b7bfd0;margin-top:-6.5px;box-shadow:0 1px 4px rgba(0,0,0,.5);transition:transform .12s,background .12s}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:50%;background:#b7bfd0}
+input[type=range]:hover::-webkit-slider-thumb{background:#e3e8f4;transform:scale(1.1)}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:none;width:36px;height:21px;border-radius:99px;background:#2a3246;border:1px solid var(--line);position:relative;cursor:pointer;transition:background .18s,border-color .18s;margin:0}
+input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#b9c0cf;transition:transform .18s,background .18s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+input[type=checkbox]:checked::after{transform:translateX(15px);background:#fff}
+.row-t{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13.5px;min-height:28px}
+.row-t span{min-width:0}
+.srow{display:grid;grid-template-columns:minmax(78px,36%) minmax(0,1fr) 50px;align-items:center;gap:12px;font-size:13px;color:var(--muted)}
+.srow .val{font-family:var(--mono);font-size:12px;color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
+.slab{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.slab .top{display:flex;justify-content:space-between}
+.slab .top .val{font-family:var(--mono);font-size:12px;color:var(--fg)}
+.slab .ends{display:flex;justify-content:space-between;font-size:11px;color:var(--dim)}
+.numrow{display:grid;grid-template-columns:minmax(0,1fr) 64px 14px;align-items:center;gap:8px;font-size:13.5px}
+.numrow .u{color:var(--muted);font-size:12px}
+.numrow.dis{opacity:.45}
+.sizerow{display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:12px;align-items:center}
+
+/* buttons */
+.btn{background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:11px;padding:0 14px;height:38px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--fg);transition:background .15s,border-color .15s}
+.btn:hover{background:rgba(255,255,255,.07);border-color:var(--line-2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.full{width:100%}
+.btn-hero{height:54px;border:0;border-radius:15px;font-size:15px;font-weight:600;color:#0d1531;background:linear-gradient(180deg,#e4e9ff 0%,#a8b8ff 100%);box-shadow:0 10px 28px rgba(120,145,255,.32),inset 0 1px 0 rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .12s,box-shadow .12s}
+.btn-hero:hover{transform:translateY(-1px);box-shadow:0 14px 32px rgba(120,145,255,.42),inset 0 1px 0 rgba(255,255,255,.7)}
+.btn-hero:disabled{opacity:.55;transform:none;cursor:not-allowed}
+.btn-hero .i{stroke-width:2.2}
+.reset{background:none;border:1px solid var(--line);border-radius:9px;padding:6px 11px;font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.reset:hover{color:var(--fg);border-color:var(--line-2)}
+.reset.wide{width:100%;padding:9px 11px}
+.reset .i{width:14px;height:14px}
+
+/* segmented controls */
+.segs,.provider{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;padding:4px;background:var(--well);border:1px solid var(--line);border-radius:13px}
+.segs button,.provider button{background:none;border:1px solid transparent;border-radius:9px;padding:7px 6px;font-size:12.5px;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;transition:color .15s,background .15s}
+.segs button:hover,.provider button:hover{color:var(--fg)}
+.segs button.on,.provider button.on{background:rgba(255,255,255,.07);border-color:var(--line-2);color:var(--fg);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.segs .i{width:15px;height:15px}
+.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.seg button{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;height:36px;font-size:12.5px;color:var(--fg)}
+.seg button:hover{border-color:var(--line-2)}
+.seg button.on,.seg button[aria-pressed="true"]{background:rgba(159,177,255,.12);border-color:rgba(159,177,255,.5)}
+
+/* preview */
+.canvas-wrap{border-radius:14px;overflow:hidden;background-color:#30353f;background-image:linear-gradient(45deg,#3d434e 25%,transparent 25%),linear-gradient(-45deg,#3d434e 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#3d434e 75%),linear-gradient(-45deg,transparent 75%,#3d434e 75%);background-size:22px 22px;background-position:0 0,0 11px,11px -11px,-11px 0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+canvas#cv{display:block;width:100%;height:auto;aspect-ratio:16/9}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.bar .sp{flex:1}
+.bar .btn{font-family:var(--ui);font-size:13px}
+
+/* prompt card */
+.add-img{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border:1px dashed var(--line-2);border-radius:10px;color:var(--muted);font-size:12.5px;cursor:pointer;background:none}
+.add-img:hover{color:var(--fg);border-color:var(--accent)}
+.imgrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.thumbs{display:flex;gap:8px}
+.thumb{position:relative;width:34px;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line-2)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb button{position:absolute;inset:0;background:rgba(0,0,0,.55);border:0;color:#fff;opacity:0;font-size:14px}
+.thumb:hover button,.thumb button:focus-visible{opacity:1}
+.clips{display:flex;flex-direction:column;gap:6px}
+.clip{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.025);text-align:left;color:var(--fg)}
+.clip.on{border-color:rgba(159,177,255,.6);background:rgba(159,177,255,.07)}
+.clip .n{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.clip .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
+
+/* voice card */
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px 18px}
+@media (max-width:700px){.vgrid{grid-template-columns:1fr}}
+.vgrid .wide{grid-column:1/-1}
+.vactions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}
+.vnote{font-size:12px;color:var(--warn);background:rgba(242,178,92,.07);border:1px solid rgba(242,178,92,.22);border-radius:10px;padding:9px 11px;margin:0}
+.status{font-size:12.5px;color:var(--muted)} .status:empty{display:none}
+.status.err{color:var(--err)} .status.ok{color:var(--ok)}
+
+/* download card */
+.dl{background:linear-gradient(180deg,rgba(68,94,178,.36),rgba(26,36,64,.55));border-color:rgba(150,170,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 40px rgba(30,45,110,.25)}
+.dl-h{display:flex;align-items:center;gap:12px;font-size:16.5px;font-weight:600;letter-spacing:-.01em}
+.dl-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+.dl-ic .i{width:19px;height:19px;stroke-width:2.1}
+.meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:#aeb8d6;margin-top:-6px}
+
+/* settings */
+.pane{display:flex;flex-direction:column;gap:14px}
+
+/* design tabs */
+.dtabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;padding:4px;background:var(--well);border:1px solid var(--line);border-radius:13px}
+.dtabs button{background:none;border:1px solid transparent;border-radius:9px;padding:7px 2px;color:var(--muted);font-size:12.5px}
+.dtabs button:hover{color:var(--fg)}
+.dtabs button.on{background:rgba(255,255,255,.07);border-color:var(--line-2);color:var(--fg)}
+.dpane{display:flex;flex-direction:column;gap:14px}
+.looks{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:calc(100vh - 230px);min-height:300px;overflow-y:auto;padding:2px 6px 2px 2px;margin-right:-8px}
+.look{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:13px;padding:6px 6px 9px;display:flex;flex-direction:column;gap:7px;text-align:left;transition:border-color .15s,background .15s}
+.look:hover{border-color:var(--line-2)}
+.look canvas{width:100%;height:auto;aspect-ratio:16/9;border-radius:8px;display:block}
+.look span{font-size:12px;padding:0 4px;color:var(--muted)}
+.look.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:rgba(159,177,255,.06)}
+.look.on span{color:var(--fg)}
+.sec{display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid var(--line)}
+.sec h5{margin:0;font-size:13px;font-weight:600;color:var(--fg)}
+.sec.off,.dpane .off{opacity:.38;pointer-events:none}
+.provider.c3{grid-auto-columns:1fr}
+.cbox{display:flex;flex-direction:column;gap:10px}
+.lbl{font-size:12px;color:var(--muted)}
+.swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:7px}
+.sw{aspect-ratio:1;border-radius:8px;border:1px solid rgba(255,255,255,.14);padding:0;transition:transform .12s}
+.sw:hover{transform:scale(1.08)}
+.sw.on{outline:2px solid var(--fg);outline-offset:2px}
+.hexrow{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:8px;align-items:center}
+.chip{height:38px;border-radius:10px;border:1px solid var(--line-2);padding:0;box-shadow:0 0 0 3px rgba(12,17,30,.9) inset}
+.hexrow input{text-transform:uppercase;height:38px;font-family:var(--mono);font-size:12.5px}
+.hexrow input.bad{border-color:var(--err)}
+.hexrow .btn{height:38px;padding:0 11px;font-size:12px}
+.recent{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted)}
+.recent > div{display:flex;gap:6px}
+.recent .sw{width:24px;border-radius:6px}
+.toggles{display:grid;grid-template-columns:1fr;gap:10px}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px;cursor:pointer;flex-direction:row-reverse}
+.tog span{flex:1}
+.fonts{display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 470px);min-height:220px;overflow-y:auto;padding-right:6px;margin-right:-8px}
+.fonts h4{margin:8px 0 0;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.fonts h4:first-child{margin-top:0}
+.fopt{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:11px;padding:9px 12px;text-align:left;color:var(--fg)}
+.fopt:hover{border-color:var(--line-2)}
+.fopt.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.fopt .smp{font-size:19px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fopt .nm{font-size:11px;color:var(--muted);font-family:var(--ui)}
+.drop{display:flex;flex-direction:column;align-items:center;gap:3px;padding:14px 12px;border:1px dashed var(--line-2);border-radius:12px;cursor:pointer;text-align:center;font-size:13px}
+.drop span{color:var(--muted);font-size:12px}
+.drop:hover{border-color:var(--accent)}
+.sr{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.subopts{display:flex;flex-direction:column;gap:12px;padding-left:14px;border-left:2px solid var(--line)}
+.subopts.off{opacity:.4;pointer-events:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark"><svg viewBox="-40 -64 467 467" aria-hidden="true"><g fill="#111"><rect x="0" y="0" width="271" height="93"/><rect x="0" y="0" width="89" height="207"/><rect x="118" y="126" width="269" height="94"/><rect x="118" y="126" width="90" height="213"/></g></svg></div>
+    <span>Prompt Studio<b>.</b></span>
+  </div>
+  <div class="modebar">
+    <div class="segs" id="modeSeg" role="tablist" aria-label="Clip mode">
+      <button data-m="single" class="on"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg> Single clip</button>
+      <button data-m="multi"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg> Script → clips</button>
+    </div>
+    <button class="icon-btn" id="resetAll" title="Reset all settings" aria-label="Reset all settings"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+  </div>
+</header>
+
+<main class="app">
+  <!-- LEFT -->
+  <aside class="col">
+    <section class="card">
+      <div class="card-h"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.3-4-7.7-9-7.7z"/><circle cx="7.5" cy="11" r="1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1" fill="currentColor"/><circle cx="15" cy="8" r="1" fill="currentColor"/></svg> Prompt design <span class="sp"></span><button class="icon-btn" id="resetDesign" title="Reset design" aria-label="Reset design"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button></div>
+      <div class="dtabs" id="dtabs" role="tablist" aria-label="Design">
+        <button data-t="looks" class="on">Looks</button><button data-t="shape">Shape</button><button data-t="glow">Glow</button><button data-t="font">Font</button>
+      </div>
+
+      <div class="dpane" data-pane="looks"><div class="looks" id="looks"></div></div>
+
+      <div class="dpane" data-pane="shape" hidden>
+        <label class="f">Video background
+          <select id="bgMode"><option value="transparent">Transparent</option><option value="green">Green screen</option><option value="black">Black</option></select>
+        </label>
+        <div class="hr"></div>
+        <label class="slab"><span class="top"><span>Corner roundness</span><span class="val" id="vRound">50%</span></span><input type="range" id="round" min="0" max="100" value="50"><span class="ends"><span>Square</span><span>Rounded</span></span></label>
+        <label class="slab"><span class="top"><span>Width</span><span class="val" id="vW">100%</span></span><input type="range" id="bw" min="50" max="115" value="100"></label>
+        <label class="slab"><span class="top"><span>Height</span><span class="val" id="vH">100%</span></span><input type="range" id="bh" min="60" max="140" value="100"></label>
+        <button class="reset wide" data-reset="shape"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg> Reset shape</button>
+      </div>
+
+      <div class="dpane" data-pane="glow" hidden>
+        <div class="seg" id="effects">
+          <button data-e="none">None</button>
+          <button data-e="shadow">Soft shadow</button>
+          <button data-e="outline">Outline</button>
+          <button data-e="glow" class="on">Glow</button>
+        </div>
+
+        <div class="sec gonly">
+          <label class="srow"><span>Size</span><input type="range" id="glowSize" min="20" max="200" value="100"><span class="val" id="vGs">100</span></label>
+          <label class="srow"><span>Intensity</span><input type="range" id="glowAmt" min="20" max="200" value="100"><span class="val" id="vGa">100%</span></label>
+          <label class="srow"><span>Spread</span><input type="range" id="spread" min="0" max="20" value="4"><span class="val" id="vSp">4</span></label>
+        </div>
+
+        <div class="sec lit">
+          <h5>Colour</h5>
+          <div class="provider c3" id="glowMode">
+            <button data-m="single" class="on">Single</button><button data-m="gradient">Gradient</button><button data-m="rainbow">Rainbow</button>
+          </div>
+          <div id="c1Box" class="cbox">
+            <div class="swatches" id="swatches" role="listbox" aria-label="Glow colour"></div>
+            <div class="hexrow">
+              <button class="chip" id="chip" title="Pick any colour" aria-label="Pick any colour"></button>
+              <input type="text" id="hexIn" class="mono" maxlength="7" spellcheck="false" aria-label="Hex colour">
+              <button class="btn" id="moreColor">Any colour…</button>
+              <input type="color" id="glowColor" class="sr" value="#a855f7" tabindex="-1" aria-hidden="true">
+            </div>
+            <div class="recent" id="recent" hidden><span>Recent</span><div id="recentList"></div></div>
+          </div>
+          <div id="c2Box" class="cbox" hidden>
+            <span class="lbl">Second colour</span>
+            <div class="swatches" id="swatches2" role="listbox" aria-label="Second colour"></div>
+            <div class="hexrow">
+              <button class="chip" id="chip2" title="Pick any colour" aria-label="Pick any second colour"></button>
+              <input type="text" id="hexIn2" class="mono" maxlength="7" spellcheck="false" aria-label="Second hex colour">
+              <button class="btn" id="moreColor2">Any colour…</button>
+              <input type="color" id="glowColor2" class="sr" value="#22e3ff" tabindex="-1" aria-hidden="true">
+            </div>
+          </div>
+          <p class="hint" id="rainbowNote" hidden>Every hue except green, so it stays clean on a green screen.</p>
+        </div>
+
+        <div class="sec gonly">
+          <h5>Style</h5>
+          <div class="toggles">
+            <label class="tog"><input type="checkbox" id="neon"><span>Neon tube edge</span></label>
+            <label class="tog"><input type="checkbox" id="innerGlow"><span>Inner glow</span></label>
+            <label class="tog"><input type="checkbox" id="glowIcons"><span>Glowing icons</span></label>
+          </div>
+        </div>
+
+        <div class="sec lit">
+          <h5>Animation</h5>
+          <div class="provider" id="glowAnim">
+            <button data-a="none" class="on">None</button><button data-a="pulse">Pulse</button><button data-a="shift">Colour shift</button><button data-a="chase">Chase</button>
+          </div>
+          <p class="hint">Animations play in the preview and the exported video. Colour shift and Rainbow skip green, so no part of the glow keys out.</p>
+        </div>
+
+        <button class="reset wide" data-reset="glow">↺ Reset to look's glow</button>
+      </div>
+
+      <div class="dpane" data-pane="font" hidden>
+        <div class="fonts" id="fontGrid" role="listbox" aria-label="Font"></div>
+        <div class="seg">
+          <button id="boldBtn" aria-pressed="false"><b>B</b>&nbsp; Bold text</button>
+          <button id="resetType">Reset to look</button>
+        </div>
+        <label class="srow"><span>Spacing</span><input type="range" id="track" min="-3" max="12" value="0"><span class="val" id="vTrack">0 px</span></label>
+        <label class="f">Cursor<select id="caretPick">
+          <option value="look">Look default</option><option value="bar">Bar  |</option><option value="block">Block  █</option><option value="underscore">Underscore  _</option>
+        </select></label>
+      </div>
+    </section>
+  </aside>
+
+  <!-- CENTER -->
+  <div class="col">
+    <section class="card">
+      <div class="card-h"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/></svg> Live preview</div>
+      <div class="canvas-wrap"><canvas id="cv" width="1920" height="1080"></canvas></div>
+      <div class="bar"><span id="clipInfo">16:9 / 2.3 s</span><span class="sp"></span><button class="btn" id="playBtn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor" stroke="none"/></svg> Preview</button></div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg> <span id="promptTitle">Your prompt</span><span class="sp"></span><span class="pill" id="charCount">0 characters</span></div>
+      <textarea id="script" spellcheck="false" aria-label="Prompt">Add a forest map</textarea>
+      <p class="hint" id="multiHint" hidden>One prompt per line. Each line becomes its own clip.</p>
+      <div class="imgrow">
+        <label class="add-img" for="imgFile"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.8"/><path d="m21 15-4.5-4.5L6 21"/></svg> Add image</label>
+        <input type="file" id="imgFile" accept="image/*" multiple class="sr">
+        <div class="thumbs" id="thumbs"></div>
+        <span class="sp" style="flex:1"></span>
+        <span class="pill" id="imgCount">0/3</span>
+      </div>
+      <div class="clips" id="clipList" hidden></div>
+    </section>
+
+    <section class="card" id="voiceCard">
+      <div class="card-h"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg> Voiceover <span class="pill" id="vCurrent" hidden></span><span class="sp"></span><input type="checkbox" id="voiceOn" aria-label="Voiceover on"></div>
+      <p class="muted" id="voiceOff">Add narration with ElevenLabs or Inworld, typed in sync with every letter.</p>
+      <div id="voiceBody" hidden>
+        <div class="vgrid">
+          <label class="f">Voice model
+            <select id="vModel">
+              <optgroup label="ElevenLabs">
+                <option value="eleven_multilingual_v2">ElevenLabs Multilingual v2</option>
+                <option value="eleven_turbo_v2_5">ElevenLabs Turbo v2.5</option>
+                <option value="eleven_flash_v2_5">ElevenLabs Flash v2.5</option>
+              </optgroup>
+              <optgroup label="Inworld">
+                <option value="inworld-tts-2">Inworld TTS 2</option>
+                <option value="inworld-tts-2-flash">Inworld TTS 2 Flash</option>
+              </optgroup>
+              <optgroup label="Your own audio">
+                <option value="upload">Upload a recording</option>
+              </optgroup>
+            </select>
+          </label>
+          <label class="f api"><span id="keyLabel">API key</span><input type="password" id="keyIn" autocomplete="off" placeholder="sk_…"></label>
+          <label class="f api">Voice ID<input type="text" id="voiceIdIn" autocomplete="off" spellcheck="false" placeholder="Paste your voice ID" style="font-family:var(--mono);font-size:13px"></label>
+          <label class="slab api"><span class="top"><span>Speaking speed</span><span class="val" id="vSpeed">1.00×</span></span><input type="range" id="speed" min="70" max="130" value="100"></label>
+          <div class="wide upl" hidden>
+            <label class="drop" for="audioFile"><b id="audioLabel">Choose an audio file for this clip</b><span>MP3 or WAV · typing follows the speech it finds</span></label>
+            <input type="file" id="audioFile" accept="audio/*" class="sr">
+          </div>
+          <label class="slab"><span class="top"><span>Voice volume</span><span class="val" id="vVv">85%</span></span><input type="range" id="voiceVol" min="0" max="100" value="85"></label>
+          <div class="row-t"><span>Sync typing to voice</span><input type="checkbox" id="sync" checked></div>
+          <label class="f wide">Reveal style
+            <select id="reveal"><option value="letter">Letter by letter</option><option value="word">Word by word</option></select>
+          </label>
+          <div class="vactions wide">
+            <button class="btn full" id="genBtn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg> <span id="genLabel">Generate voice</span></button>
+            <button class="btn" id="listenBtn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor" stroke="none"/></svg> Listen</button>
+          </div>
+          <div class="wide" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+            <span class="hint" id="readyInfo">0/1 ready</span>
+            <span class="status" id="vStatus"></span>
+          </div>
+          <p class="hint wide" id="vFoot">API keys and voice IDs save separately per provider, in this browser only. Generating uses your provider credits.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- RIGHT -->
+  <aside class="col right">
+    <section class="card dl">
+      <div class="dl-h"><span class="dl-ic"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg></span> Download your video</div>
+      <div class="meta"><span id="metaFmt">1080p · 60 fps · WEBM</span><span id="metaClips">1 clip</span></div>
+      <button class="btn-hero" id="exportBtn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg> <span id="exportLabel">Download video</span></button>
+      <div class="status" id="exStatus"></div>
+      <div class="hr"></div>
+      <label class="f">Format
+        <select id="fmt">
+          <option value="alpha">WebM · transparent background</option>
+          <option value="green">Green screen · chroma key in CapCut</option>
+        </select>
+      </label>
+      <label class="f">Export quality
+        <select id="quality">
+          <option value="hi">Original quality · 1080p · 60 fps</option>
+          <option value="mid">Balanced · 1080p · 60 fps</option>
+          <option value="lo">Small file · 1080p · 30 fps</option>
+        </select>
+      </label>
+      <button class="reset wide" id="exportWav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg> Audio only (.wav)</button>
+      <p class="hint">Records in real time, so keep this tab in front while it runs.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg> Settings</div>
+      <div class="segs" id="stabs" role="tablist" aria-label="Settings">
+        <button data-t="style" class="on"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 11-11M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM19 11l.6 1.4L21 13l-1.4.6L19 15l-.6-1.4L17 13l1.4-.6z"/></svg> Style</button>
+        <button data-t="timing"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Timing</button>
+        <button data-t="sound"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg> Sound</button>
+      </div>
+
+      <div class="pane" data-spane="style">
+        <label class="f">Model
+          <select id="modelPick">
+            <optgroup label="Frontier">
+              <option>Claude Fable 5.1</option><option selected>Claude Opus 5.5</option><option>Claude Sonnet 5.5</option>
+              <option>GPT-6 Astra</option><option>GPT-6.1 Sol</option><option>Gemini 4 Argon</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option>Claude Haiku 5.5</option><option>Claude Mythos 5.1</option><option>GPT-6 Sol</option><option>Grok 4.6</option>
+            </optgroup>
+            <optgroup label="Retro">
+              <option>Gemini 2.0 Flash</option><option>Claude Instant 1.2</option><option>Bard</option><option>GPT-2</option><option>ELIZA</option>
+            </optgroup>
+            <option value="__custom">Custom…</option>
+          </select>
+        </label>
+        <label class="f" id="customWrap" hidden>Custom model name<input type="text" id="modelName" value="Claude Opus 5.5"></label>
+        <div class="f"><span>Text size</span>
+          <div class="sizerow"><input type="range" id="ts" min="36" max="96" value="62" aria-label="Text size"><input type="number" id="tsNum" min="36" max="96" value="62" aria-label="Text size value"></div>
+        </div>
+        <div class="hr"></div>
+        <div class="row-t"><span>Show placeholder</span><input type="checkbox" id="placeholder" checked></div>
+        <label class="f" id="phWrap">Placeholder text<input type="text" id="phText" value="What do you want to create?"></label>
+        <div class="hr"></div>
+        <div class="row-t"><span>Show "Using …" tab</span><input type="checkbox" id="showTab" checked></div>
+        <label class="f" id="tabWrap">Tab name<input type="text" id="tabName" value="ForgeGUI"></label>
+        <div class="row-t"><span>Forge logo</span><input type="checkbox" id="showLogo" checked></div>
+        <label class="drop" for="logoFile" id="logoDrop"><b id="logoLabel">Use your own logo</b><span>optional · square PNG</span></label>
+        <input type="file" id="logoFile" accept="image/*" class="sr">
+        <div class="hr"></div>
+        <div class="row-t"><span>White box</span><input type="checkbox" id="whiteBox"></div>
+      </div>
+
+      <div class="pane" data-spane="timing" hidden>
+        <div class="row-t"><span>Idle before typing</span><input type="checkbox" id="idle"></div>
+        <div class="row-t"><span>Natural typing pace</span><input type="checkbox" id="natural" checked></div>
+        <div class="numrow" id="typeTimeRow"><span>Typing time</span><input type="number" id="typeTime" min="0.3" max="20" step="0.1" placeholder="auto"><span class="u">s</span></div>
+        <label class="srow" id="cpsRow"><span>Auto speed</span><input type="range" id="cps" min="6" max="40" value="18"><span class="val" id="vCps">18/s</span></label>
+        <div class="hr"></div>
+        <div class="numrow"><span>Pause before Send</span><input type="number" id="holdNum" min="0" max="3" step="0.1" value="0.3"><span class="u">s</span></div>
+        <input type="range" id="hold" min="0" max="30" value="3" aria-label="Pause before Send">
+        <label class="srow"><span>Voice lead</span><input type="range" id="leadMs" min="-200" max="300" step="10" value="60"><span class="val" id="vLead">60 ms</span></label>
+        <div class="hr"></div>
+        <div class="row-t"><span>Press Send at the end</span><input type="checkbox" id="sendPress" checked></div>
+        <div class="subopts" id="sendOpts">
+          <div class="row-t"><span>Mouse cursor clicks it</span><input type="checkbox" id="cursor" checked></div>
+        </div>
+        <div class="row-t"><span>Fade out at the end</span><input type="checkbox" id="fadeOut"></div>
+        <button class="reset wide" data-reset="timing"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg> Reset timing</button>
+      </div>
+
+      <div class="pane" data-spane="sound" hidden>
+        <div class="row-t"><span>Typing sound</span><input type="checkbox" id="clicks" checked></div>
+        <label class="f">Sound mode
+          <select id="keyMode"><option value="click">Per-key clicks</option><option value="soft">Soft taps</option><option value="mech">Mechanical keyboard</option></select>
+        </label>
+        <label class="srow"><span>Key volume</span><input type="range" id="clickVol" min="0" max="100" value="25"><span class="val" id="vCv">25%</span></label>
+        <div class="hr"></div>
+        <div class="f"><span>Send click SFX</span>
+          <div class="vactions"><select id="sfx" aria-label="Send click sound"><option value="mouse">Mouse click</option><option value="pop">Pop</option><option value="tap">Tap</option><option value="ding">Ding</option><option value="none">None</option></select><button class="btn" id="sfxListen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg> Listen</button></div>
+        </div>
+        <label class="srow"><span>Click volume</span><input type="range" id="sfxVol" min="0" max="100" value="70"><span class="val" id="vSv">70%</span></label>
+        <button class="reset wide" data-reset="sound"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg> Reset sound</button>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const cv = $("cv"); let ctx = cv.getContext("2d");
+const W = 1920, H = 1080;
+let actx = null;
+const AC = () => (actx ||= new (window.AudioContext || window.webkitAudioContext)());
+
+/* ---------------- state ---------------- */
+const S = {
+  look: "forgegui", effect: "glow", glow: "#a855f7", glow2: "#22e3ff", glowAmt: 100, glowSize: 100, spread: 4,
+  glowMode: "single", glowAnim: "none", neon: false, innerGlow: false, glowIcons: false,
+  bg: "transparent", font: "look", caret: "look", bold: false, track: 0, round: 50, bw: 100, bh: 100, ts: 62,
+  showTab: true, showLogo: true, tabName: "ForgeGUI", model: "Claude Opus 5.5", logo: null,
+  placeholder: true, phText: "What do you want to create?",
+  multi: false, voiceOn: false, sync: true, reveal: "letter", voiceVol: .85, speed: 1,
+  idle: false, natural: true, typeTime: 0, cps: 18, leadMs: 60, hold: .3, sendPress: true, cursor: true, fadeOut: false,
+  clicks: true, keyMode: "click", clickVol: .25, sfx: "mouse", sfxVol: .7, fmt: "alpha", quality: "hi",
+};
+const IMGS = [];   // attached images shown in the box: {img, url}
+
+let BK = 1; // blur scale (thumbnails draw at quarter size)
+const FONTS = {
+  ui:      { name: "Clean",        group: "Clean", fam: '"Inter Tight", system-ui, sans-serif', w: 400, bold: 700, k: 1, lh: 1.32 },
+  poppins: { name: "Modern",       group: "Clean", fam: 'Poppins, system-ui, sans-serif', w: 400, bold: 600, k: .95, lh: 1.36 },
+  rubik:   { name: "Friendly",     group: "Clean", fam: 'Rubik, system-ui, sans-serif', w: 400, bold: 600, k: 1, lh: 1.32 },
+  nunito:  { name: "Soft",         group: "Clean", fam: 'Nunito, system-ui, sans-serif', w: 400, bold: 700, k: 1.02, lh: 1.32 },
+  mono:    { name: "Code",         group: "Clean", fam: '"JetBrains Mono", ui-monospace, monospace', w: 400, bold: 500, k: .86, lh: 1.45 },
+  lilita:  { name: "Chunky",       group: "Game",  fam: '"Lilita One", Impact, sans-serif', w: 400, bold: 400, k: 1.04, lh: 1.25 },
+  bungee:  { name: "Arcade",       group: "Game",  fam: 'Bungee, Impact, sans-serif', w: 400, bold: 400, k: .78, lh: 1.35 },
+  round:   { name: "Rounded",      group: "Game",  fam: 'Fredoka, "Arial Rounded MT Bold", sans-serif', w: 500, bold: 600, k: 1, lh: 1.3 },
+  bangers: { name: "Comic action", group: "Fun",   fam: 'Bangers, Impact, sans-serif', w: 400, bold: 400, k: 1.12, lh: 1.2 },
+  comic:   { name: "Comic",        group: "Fun",   fam: '"Comic Neue", "Comic Sans MS", sans-serif', w: 700, bold: 700, k: 1.05, lh: 1.28 },
+  creep:   { name: "Spooky",       group: "Fun",   fam: 'Creepster, Impact, sans-serif', w: 400, bold: 400, k: 1.05, lh: 1.3 },
+  pixel:   { name: "Pixel",        group: "Retro", fam: '"Press Start 2P", monospace', w: 400, bold: 400, k: .52, lh: 1.9 },
+  silk:    { name: "Pixel clean",  group: "Retro", fam: 'Silkscreen, monospace', w: 400, bold: 700, k: .78, lh: 1.45 },
+  vt:      { name: "Terminal",     group: "Retro", fam: 'VT323, ui-monospace, monospace', w: 400, bold: 400, k: 1.3, lh: 1.05 },
+  type:    { name: "Typewriter",   group: "Retro", fam: '"Special Elite", "Courier New", monospace', w: 400, bold: 400, k: .95, lh: 1.4 },
+  hand:    { name: "Handwritten",  group: "Hand",  fam: '"Patrick Hand", "Segoe Print", cursive', w: 400, bold: 400, k: 1.12, lh: 1.25 },
+  caveat:  { name: "Marker",       group: "Hand",  fam: 'Caveat, "Segoe Print", cursive', w: 500, bold: 700, k: 1.2, lh: 1.15 },
+};
+const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+function emoji(ch, x, y, size, rot = 0) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.font = `${size}px ${EMOJI_FONT}`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(ch, 0, 0); ctx.restore();
+}
+const wob = (t, i, amt = .12) => Math.sin(t * 2.4 + i * 1.7) * amt;
+function pixelStar(x, y, u, color) { ctx.fillStyle = color; ctx.fillRect(x - u / 2, y - u * 2.5, u, u * 5); ctx.fillRect(x - u * 2.5, y - u / 2, u * 5, u); }
+
+/* each look: colors + optional bg(B), inner(B,t,L) drawn inside the box, deco(B,t) drawn around it */
+const LOOKS = {
+  forgegui: { name: "ForgeGUI dark", bg: "#141414", fg: "#f3f3f3", sub: "#a7a7a7", btnLine: "#4a4a4a", send: "#3b82f6", effect: "glow", glow: "#a855f7", font: "ui" },
+  white: { name: "ForgeGUI white", bg: "#ffffff", fg: "#16181d", sub: "#6b7280", btnLine: "#d6d9df", send: "#3b82f6", effect: "shadow", glow: "#a855f7", font: "ui",
+    edge: "#e3e5ea", logoBg: "#141414", logoFg: "#ffffff", caretColor: "#3b82f6" },
+  horror: { name: "Horror", bg: "#0e0a0a", fg: "#ecdcdc", sub: "#8f7171", btnLine: "#4a2222", send: "#c0141c", effect: "glow", glow: "#6d0a0f", innerGlow: true, font: "type", caretColor: "#c0141c",
+    inner(B) { const g = ctx.createRadialGradient(B.x + B.w / 2, B.y + B.h / 2, B.h * .2, B.x + B.w / 2, B.y + B.h / 2, B.w * .7); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(120,0,8,.28)"); ctx.fillStyle = g; ctx.fillRect(B.x, B.y - 200, B.w, B.h + 200); },
+    deco(B, t) {
+      const xs = [.05, .12, .19, .31, .4, .53, .62, .73, .85, .94], ls = [70, 135, 45, 165, 85, 118, 55, 145, 78, 104], ws = [16, 22, 12, 26, 16, 20, 12, 24, 14, 18];
+      const g = Math.min(1, Math.max(0, (t - .2) / 2.4)), e = 1 - Math.pow(1 - g, 2);
+      ctx.fillStyle = "#8a0b10";
+      xs.forEach((f, i) => {
+        const x = B.x + B.r + (B.w - 2 * B.r) * f, len = ls[i] * (.3 + .7 * e), w = ws[i], y = B.y + B.h - 4;
+        ctx.beginPath(); ctx.moveTo(x - w / 2 - 8, y); ctx.quadraticCurveTo(x - w / 2, y + 6, x - w / 2, y + 20);
+        ctx.lineTo(x - w / 2, y + len); ctx.arc(x, y + len, w / 2 * 1.15, Math.PI, 0, true);
+        ctx.lineTo(x + w / 2, y + 20); ctx.quadraticCurveTo(x + w / 2, y + 6, x + w / 2 + 8, y); ctx.closePath(); ctx.fill();
+      });
+    } },
+  halloween: { name: "Halloween", bg: "#1d1230", fg: "#f6eeff", sub: "#b8a2da", btnLine: "#4b3570", send: "#ff7a1a", effect: "glow", glow: "#ff7a1a", glow2: "#a855f7", glowMode: "gradient", font: "round", caretColor: "#ff7a1a",
+    deco(B, t) { emoji("🕸️", B.x + B.w - 60, B.y + 55, 120); emoji("🎃", B.x + B.w - 6, B.y - 52, 118, wob(t, 1)); emoji("🦇", B.x - 26, B.y + B.h - 120, 96, wob(t, 2, .2)); emoji("👻", B.x + B.w * .62, B.y - 40, 70, wob(t, 3)); } },
+  meme: { name: "Meme", bg: "#ffffff", fg: "#000000", sub: "#444444", btnLine: "#000000", send: "#ff2d55", effect: "outline", glow: "#000000", font: "comic", logoBg: "#000", logoFg: "#fff", caretColor: "#000",
+    deco(B, t) { emoji("😂", B.x + B.w - 30, B.y - 50, 116, wob(t, 1, .2)); emoji("💀", B.x - 34, B.y + B.h * .55, 96, wob(t, 2, .25)); emoji("🔥", B.x + B.w + 28, B.y + B.h * .62, 96, wob(t, 3, .15)); } },
+  stud: { name: "Stud", bg: "#c8242a", fg: "#ffffff", sub: "#ffd3d3", btnLine: "rgba(255,255,255,.55)", btnFill: "#a81d22", send: "#ffffff", effect: "shadow", glow: "#c8242a", font: "lilita", textShadow: "rgba(70,0,0,.65)",
+    inner(B) {
+      const sp = 58, r = 17, top = B.y - (B.tab ? B.tab.h : 0);
+      for (let yy = top + sp / 2; yy < B.y + B.h; yy += sp) for (let xx = B.x + sp / 2; xx < B.x + B.w; xx += sp) {
+        ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.beginPath(); ctx.arc(xx + 2, yy + 4, r, 0, 7); ctx.fill();
+        ctx.fillStyle = "#d9343a"; ctx.beginPath(); ctx.arc(xx, yy, r, 0, 7); ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(xx, yy, r - 5, Math.PI * 1.05, Math.PI * 1.6); ctx.stroke();
+      }
+    } },
+  retro: { name: "Retro pixel", bg: "#1c1a4a", fg: "#ffffff", sub: "#a9a3ff", btnLine: "#5550b0", send: "#ff5fa2", effect: "outline", glow: "#ff5fa2", font: "pixel", caret: "block", caretColor: "#ff5fa2",
+    deco(B, t) {
+      [[-.025, .12, "#ffd84a"], [1.025, .18, "#ff5fa2"], [-.02, .86, "#ff5fa2"], [1.03, .8, "#ffd84a"], [.55, -.09, "#7ef9ff"], [.86, 1.09, "#7ef9ff"], [.18, 1.1, "#ffd84a"]]
+        .forEach(([fx, fy, c], i) => { const on = Math.floor(t * 3 + i) % 3 !== 0; pixelStar(B.x + B.w * fx, B.y + B.h * fy, on ? 11 : 6, c); });
+    } },
+  cute: { name: "Cute", bg: "#fff0f6", fg: "#5a2744", sub: "#c47a9f", btnLine: "#f2bfd6", send: "#ff4f9a", effect: "glow", glow: "#ff9ccc", font: "nunito", logoBg: "#ff4f9a", logoFg: "#fff", caretColor: "#ff4f9a",
+    deco(B, t) { emoji("🎀", B.x + B.w - 34, B.y - 34, 112, wob(t, 1)); emoji("💖", B.x - 30, B.y + B.h * .62, 88, wob(t, 2, .2)); emoji("✨", B.x + B.w + 26, B.y + B.h * .74, 70, wob(t, 3, .3)); emoji("🌸", B.x + B.w * .45, B.y + B.h + 30, 60, wob(t, 4, .3)); } },
+  terminal: { name: "Terminal", bg: "#050705", fg: "#ffb000", sub: "#9a7418", btnLine: "#3b2f0e", send: "#ffb000", effect: "none", glow: "#ffb000", font: "vt", caret: "block", edge: "#2c2410", logoBg: "#ffb000", logoFg: "#050705",
+    inner(B) { ctx.fillStyle = "rgba(255,176,0,.045)"; for (let yy = B.y - 140; yy < B.y + B.h; yy += 6) ctx.fillRect(B.x, yy, B.w, 2); } },
+  frosted: { name: "Frosted glass", fg: "#ffffff", sub: "rgba(255,255,255,.78)", btnLine: "rgba(255,255,255,.5)", send: "#ffffff", effect: "shadow", glow: "#ec4899", font: "ui", edge: "rgba(255,255,255,.55)", textShadow: "rgba(40,0,60,.35)",
+    bg(B) { const g = ctx.createLinearGradient(B.x, B.y - 120, B.x + B.w, B.y + B.h); g.addColorStop(0, "rgba(124,77,255,.92)"); g.addColorStop(.5, "rgba(236,72,153,.86)"); g.addColorStop(1, "rgba(34,211,238,.86)"); return g; },
+    inner(B) { const g = ctx.createLinearGradient(0, B.y - 120, 0, B.y + B.h * .6); g.addColorStop(0, "rgba(255,255,255,.28)"); g.addColorStop(1, "rgba(255,255,255,0)"); ctx.fillStyle = g; ctx.fillRect(B.x, B.y - 140, B.w, B.h); } },
+  neon: { name: "Neon", bg: "#05060c", fg: "#eafcff", sub: "#7fd9e8", btnLine: "#1e4c58", send: "#22e3ff", effect: "glow", glow: "#22e3ff", neon: true, glowIcons: true, innerGlow: true, font: "poppins", caretColor: "#22e3ff" },
+  notebook: { name: "Notebook", bg: "#fbf8ef", fg: "#1f2a44", sub: "#7a7f8f", btnLine: "#d9d2bd", send: "#2f6fde", effect: "shadow", glow: "#2f6fde", font: "hand", edge: "#e6dfcc", logoBg: "#1f2a44", logoFg: "#fff", caretColor: "#2f6fde",
+    inner(B, t, L) {
+      ctx.strokeStyle = "#c9d8f0"; ctx.lineWidth = 2;
+      for (let yy = L.textTop + L.lh * .82; yy < L.by - 12; yy += L.lh) { ctx.beginPath(); ctx.moveTo(B.x, yy); ctx.lineTo(B.x + B.w, yy); ctx.stroke(); }
+      ctx.strokeStyle = "#f1a5a5"; ctx.beginPath(); ctx.moveTo(B.x + 40, B.y - 140); ctx.lineTo(B.x + 40, B.y + B.h); ctx.stroke();
+    } },
+};
+let clips = [];   // {text, audio:AudioBuffer|null, times:number[]|null, src}
+let cur = 0;
+
+
+/* ---------------- timeline ---------------- */
+const INTRO = 0.35, LEAD = 0.25, IDLE = 1.2, SEND = 0.35, OUTRO = 0.35, CURSOR_IN = 0.6, TAIL = 0.45;
+const rand = (i, n) => { const v = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453; return v - Math.floor(v); };
+function charTimes(clip) {
+  const text = clip.text, n = text.length;
+  let times;
+  if (S.voiceOn && S.sync && clip.audio && clip.times && clip.times.length === n) {
+    times = clip.times.map(t => Math.max(0, t - S.leadMs / 1000));
+  } else {
+    // keyboard pace: even, or natural (uneven keys, longer after spaces and punctuation)
+    let acc = 0; times = [];
+    for (let i = 0; i < n; i++) {
+      times.push(acc);
+      let d = 1;
+      if (S.natural) {
+        d = .55 + rand(i, n) * 1.05;
+        const ch = text[i];
+        if (ch === " ") d *= 1.7; else if (/[,;:]/.test(ch)) d *= 2.4; else if (/[.!?]/.test(ch)) d *= 3.2;
+      }
+      acc += d;
+    }
+    const last = n > 1 ? times[n - 1] : 1, target = S.typeTime > 0 ? S.typeTime : Math.max(.2, n / S.cps);
+    const k = n > 1 ? target / last : 0;
+    times = times.map(t => t * k);
+  }
+  if (S.reveal === "word") {
+    let wt = 0;
+    for (let i = 0; i < n; i++) {
+      if (!/\s/.test(text[i]) && (i === 0 || /\s/.test(text[i - 1]))) wt = times[i];
+      times[i] = wt;
+    }
+  }
+  return times;
+}
+function timeline(clip) {
+  const times = charTimes(clip);
+  const typeEnd = times.length ? times[times.length - 1] + 0.05 : 0;
+  const voiceEnd = S.voiceOn && clip.audio ? clip.audio.duration : 0;
+  const t0 = INTRO + (S.idle ? IDLE : LEAD);
+  const bodyEnd = t0 + Math.max(typeEnd, voiceEnd);
+  const useCursor = S.sendPress && S.cursor;
+  const sendAt = bodyEnd + (useCursor ? Math.max(CURSOR_IN + .05, S.hold) : S.hold);
+  const total = sendAt + (S.sendPress ? SEND : 0) + TAIL + (S.fadeOut ? OUTRO : 0);
+  return { times, t0, typeEnd: t0 + typeEnd, sendAt, total };
+}
+
+/* ---------------- drawing ---------------- */
+function rr(c, x, y, w, h, r) { c.beginPath(); c.roundRect(x, y, w, h, r); }
+function wrapLines(text, maxW) {
+  const toks = text.match(/\S+\s*/g) || []; const lines = []; let line = "", start = 0;
+  for (const tok of toks) {
+    if (line && ctx.measureText((line + tok).trimEnd()).width > maxW) { lines.push({ start, str: line }); start += line.length; line = tok; }
+    else line += tok;
+  }
+  lines.push({ start, str: line });
+  return lines;
+}
+function drawLogo(x, y, s, P) {
+  if (S.logo) { ctx.save(); rr(ctx, x, y, s, s, s * .22); ctx.clip(); ctx.drawImage(S.logo, x, y, s, s); ctx.restore(); return; }
+  ctx.fillStyle = P.logoBg || "#ffffff"; rr(ctx, x, y, s, s, s * .22); ctx.fill();
+  ctx.fillStyle = P.logoFg || "#141414"; const u = s / 10;
+  drawForgeMark(x + s * .19, y + s * .2, s * .62);
+}
+// ForgeGUI mark: two stepped L-shapes, traced from the official logo (387 x 339 units)
+const FORGE_RECTS = [[0, 0, 271, 93], [0, 0, 89, 207], [118, 126, 269, 94], [118, 126, 90, 213]];
+function drawForgeMark(x, y, w) {
+  const k = w / 387; ctx.beginPath();
+  FORGE_RECTS.forEach(([rx, ry, rw, rh]) => ctx.rect(x + rx * k, y + ry * k, rw * k, rh * k));
+  ctx.fill("nonzero");
+}
+function shapePath(x, y, w, h, r, tab) {
+  ctx.beginPath();
+  if (!tab) { ctx.roundRect(x, y, w, h, r); return; }
+  const tr = Math.min(r, tab.h / 2), f = Math.min(28, tab.h / 2), yT = y - tab.h, tw = tab.w;
+  ctx.moveTo(x, y + h - r);
+  ctx.lineTo(x, yT + tr); ctx.arcTo(x, yT, x + tr, yT, tr);
+  ctx.lineTo(x + tw - tr, yT); ctx.arcTo(x + tw, yT, x + tw, yT + tr, tr);
+  ctx.lineTo(x + tw, y - f); ctx.quadraticCurveTo(x + tw, y, x + tw + f, y);
+  ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.closePath();
+}
+const curLook = () => LOOKS[S.look] || LOOKS.forgegui;
+const fontOf = P => FONTS[S.font === "look" ? (P.font || "ui") : S.font] || FONTS.ui;
+const fnt = (F, size, bold) => `${bold ? F.bold : F.w} ${size * F.k}px ${F.fam}`;
+
+function draw(clip, t) {
+  const P = curLook(), F = fontOf(P), tl = timeline(clip);
+  ctx.clearRect(0, 0, W, H);
+  if (S.bg === "green") { ctx.fillStyle = "#00b140"; ctx.fillRect(0, 0, W, H); }
+  if (S.bg === "black") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); }
+
+  let a = 1, sc = 1;
+  if (t < INTRO) { const k = Math.max(0, t / INTRO), e = 1 - Math.pow(1 - k, 3); a = e; sc = .94 + .06 * e; }
+  if (S.fadeOut) { const fs = tl.total - OUTRO; if (t > fs) { const k = Math.min(1, (t - fs) / OUTRO); a *= 1 - k; sc *= 1 - .03 * k; } }
+  if (a <= 0) return;
+
+  const imgH = IMGS.length ? 150 : 0, w = 1500 * S.bw / 100, h = 520 * S.bh / 100 + imgH, r = 8 + S.round / 100 * 72, fsTab = S.ts * .62;
+  let tab = null;
+  if (S.showTab) {
+    ctx.font = fnt(F, fsTab); const uw = ctx.measureText("Using ").width;
+    ctx.font = fnt(F, fsTab, true); tab = { h: 120, w: 40 + (S.showLogo ? 90 : 0) + uw + ctx.measureText(S.tabName).width + 80 };
+  }
+  const x = (W - w) / 2, y = (H - h) / 2 + (tab ? tab.h / 2 : 0), B = { x, y, w, h, r, tab };
+  const pad = 62, tx = x + pad, maxW = w - pad * 2, lh = S.ts * F.k * F.lh, textTop = y + pad - 6 + imgH;
+  const bs = 112, bx = x + 50, by = y + h - 50 - bs, L = { tx, textTop, lh, by };
+
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.translate(W / 2, H / 2); ctx.scale(sc, sc); ctx.translate(-W / 2, -H / 2);
+
+  // body + effects
+  const fill = typeof P.bg === "function" ? P.bg(B) : P.bg;
+  const lit = S.effect === "glow" || S.effect === "outline", G = lit ? glowState(t, B) : null;
+  const path = () => shapePath(x, y, w, h, r, tab);
+  if (S.effect === "glow") glowHalo(path, G);
+  path(); ctx.save();
+  if (S.effect === "shadow") { ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 60 * BK; ctx.shadowOffsetY = 18 * BK; }
+  ctx.fillStyle = fill; ctx.fill(); ctx.restore();
+  if (P.inner) { ctx.save(); path(); ctx.clip(); P.inner(B, t, L); ctx.restore(); }
+  if (S.effect === "glow" && S.innerGlow) {
+    ctx.save(); path(); ctx.clip(); path(); ctx.filter = `blur(${26 * BK * S.glowSize / 100}px)`;
+    ctx.globalAlpha *= Math.min(1, .75 * G.k); ctx.lineWidth = 46 + S.spread * 3; ctx.strokeStyle = G.style; ctx.stroke(); ctx.restore();
+  }
+  if (lit) {
+    path(); ctx.save(); ctx.lineJoin = "round";
+    ctx.lineWidth = (S.effect === "outline" ? 10 : 9) + S.spread * .6; ctx.strokeStyle = G.style; ctx.stroke();
+    if (S.effect === "glow" && S.neon) { path(); ctx.lineWidth = 3; ctx.globalAlpha *= .9; ctx.strokeStyle = "#ffffff"; ctx.stroke(); }
+    ctx.restore();
+  } else if (P.edge) { path(); ctx.lineWidth = 2; ctx.strokeStyle = P.edge; ctx.stroke(); }
+  const iconGlow = () => { if (S.effect === "glow" && S.glowIcons) { ctx.shadowColor = G.base; ctx.shadowBlur = 22 * BK * Math.min(1.6, G.k); ctx.shadowOffsetX = ctx.shadowOffsetY = 0; } };
+
+  const shadowText = () => { if (P.textShadow) { ctx.shadowColor = P.textShadow; ctx.shadowOffsetY = 3 * BK; ctx.shadowBlur = 0; } };
+
+  // tab content
+  if (tab) {
+    const ty = y - tab.h, ls = 64, lx = x + 40, ly = ty + (tab.h - ls) / 2 + 4;
+    if (S.showLogo) drawLogo(lx, ly, ls, P);
+    const txL = S.showLogo ? lx + ls + 26 : lx;
+    ctx.save(); shadowText(); ctx.textBaseline = "middle";
+    ctx.font = fnt(F, fsTab); ctx.fillStyle = P.sub; ctx.fillText("Using ", txL, ly + ls / 2);
+    const uw = ctx.measureText("Using ").width;
+    ctx.font = fnt(F, fsTab, true); ctx.fillStyle = P.fg; ctx.fillText(S.tabName, txL + uw, ly + ls / 2);
+    ctx.restore();
+    ctx.fillStyle = P.dot || "#4ea1ff"; ctx.beginPath(); ctx.arc(x + tab.w - 40, ly + ls / 2 - 4, 8, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // attached images
+  if (IMGS.length) {
+    const k = Math.min(1, Math.max(0, (t - .1) / .35)), e = 1 - Math.pow(1 - k, 3), s = 128;
+    IMGS.forEach((im, i) => {
+      const ix = tx + i * (s + 16), iy = y + pad - 12, img = im.img;
+      ctx.save(); ctx.globalAlpha *= e; ctx.translate(ix + s / 2, iy + s / 2); const z = .85 + .15 * e; ctx.scale(z, z); ctx.translate(-s / 2, -s / 2);
+      ctx.save(); rr(ctx, 0, 0, s, s, 20); ctx.clip();
+      const q = Math.max(s / img.width, s / img.height); ctx.drawImage(img, (s - img.width * q) / 2, (s - img.height * q) / 2, img.width * q, img.height * q);
+      ctx.restore(); rr(ctx, 0, 0, s, s, 20); ctx.lineWidth = 2; ctx.strokeStyle = P.btnLine; ctx.stroke(); ctx.restore();
+    });
+  }
+  // typed text
+  ctx.save(); shadowText();
+  ctx.font = fnt(F, S.ts, S.bold); ctx.letterSpacing = S.track * F.k + "px"; ctx.textBaseline = "top"; ctx.fillStyle = P.fg;
+  const lines = wrapLines(clip.text, maxW);
+  let shown = 0; for (const ct of tl.times) if (tl.t0 + ct <= t) shown++;
+  if (shown === 0 && S.placeholder && S.phText) { ctx.save(); ctx.globalAlpha *= .55; ctx.fillStyle = P.sub; ctx.fillText(S.phText, tx, textTop); ctx.restore(); }
+  let cx = tx, cy = textTop;
+  lines.forEach((ln, i) => {
+    const ly = textTop + i * lh, vis = Math.max(0, Math.min(ln.str.length, shown - ln.start));
+    if (vis > 0) ctx.fillText(ln.str.slice(0, vis), tx, ly);
+    if (shown >= ln.start) { cx = tx + ctx.measureText(ln.str.slice(0, vis).trimEnd() + (vis && ln.str[vis - 1] === " " && vis < ln.str.length ? " " : "")).width; cy = ly; }
+  });
+  ctx.restore();
+  const typing = t >= tl.t0 && t < tl.typeEnd, caret = S.caret === "look" ? (P.caret || "bar") : S.caret;
+  if (t >= INTRO && (typing || Math.floor(t * 1.9) % 2 === 0) && t < tl.sendAt) {
+    const fh = S.ts * F.k;
+    ctx.save(); iconGlow(); ctx.fillStyle = P.caretColor || P.fg;
+    if (caret === "block") { ctx.globalAlpha = a * .85; ctx.fillRect(cx + 4, cy + 2, fh * .58, fh * 1.02); ctx.globalAlpha = a; }
+    else if (caret === "underscore") ctx.fillRect(cx + 4, cy + fh * .95, fh * .55, 6);
+    else ctx.fillRect(cx + 4, cy + 2, 4, fh * 1.08);
+    ctx.restore();
+  }
+
+  // bottom bar
+  rr(ctx, bx, by, bs, bs, Math.min(24, r)); if (P.btnFill) { ctx.fillStyle = P.btnFill; ctx.fill(); }
+  ctx.lineWidth = 3; ctx.strokeStyle = P.btnLine; ctx.stroke();
+  ctx.save(); iconGlow(); ctx.strokeStyle = P.fg; ctx.lineWidth = 6; ctx.lineCap = "round"; ctx.beginPath();
+  ctx.moveTo(bx + bs / 2, by + 32); ctx.lineTo(bx + bs / 2, by + bs - 32);
+  ctx.moveTo(bx + 32, by + bs / 2); ctx.lineTo(bx + bs - 32, by + bs / 2); ctx.stroke(); ctx.restore();
+
+  const sendX = x + w - 70, midY = by + bs / 2;
+  const press = S.sendPress && t >= tl.sendAt ? Math.min(1, (t - tl.sendAt) / SEND) : 0;
+  const bump = press > 0 ? Math.sin(press * Math.PI) : 0;
+  ctx.save(); ctx.translate(sendX, midY); ctx.scale(1 - .18 * bump, 1 - .18 * bump);
+  if (bump > 0) { ctx.fillStyle = P.send; ctx.globalAlpha = a * .2 * bump; ctx.beginPath(); ctx.arc(0, 0, 58, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = a; }
+  iconGlow(); ctx.fillStyle = P.send; ctx.beginPath();
+  ctx.moveTo(-26, -24); ctx.lineTo(30, 0); ctx.lineTo(-26, 24); ctx.lineTo(-17, 0); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  ctx.save(); shadowText();
+  ctx.font = fnt(F, S.ts * .95, S.bold); ctx.textBaseline = "middle"; ctx.fillStyle = P.fg;
+  const chevX = sendX - 92, mw = ctx.measureText(S.model).width;
+  ctx.fillText(S.model, chevX - 42 - mw, midY + 2);
+  ctx.restore();
+  ctx.strokeStyle = P.fg; ctx.lineWidth = 5; ctx.beginPath();
+  ctx.moveTo(chevX - 14, midY - 7); ctx.lineTo(chevX, midY + 7); ctx.lineTo(chevX + 14, midY - 7); ctx.stroke();
+
+  if (P.deco) P.deco(B, t);
+  if (S.sendPress && S.cursor) drawCursor(sendX, midY, t, tl);
+  ctx.restore();
+}
+/* ---------- glow colours ---------- */
+function hexToHsl(hex) {
+  let v = hex.replace("#", ""); if (v.length === 3) v = [...v].map(c => c + c).join("");
+  const r = parseInt(v.slice(0, 2), 16) / 255, g = parseInt(v.slice(2, 4), 16) / 255, b = parseInt(v.slice(4, 6), 16) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let h = 0, s = 0;
+  if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
+    h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; }
+  return [h, s * 100, l * 100];
+}
+// hues 75..165 (green) are skipped so animated glows never key out on a green screen
+const GAP0 = 75, GAP = 90;
+const toSafe = u => { u = ((u % 270) + 270) % 270; return u < GAP0 ? u : u + GAP; };
+const fromSafe = h => h < GAP0 ? h : h >= GAP0 + GAP ? h - GAP : GAP0;
+function shiftColor(hex, deg, a = 1) {
+  const [h, s, l] = hexToHsl(hex);
+  const hh = deg ? toSafe(fromSafe(h) + deg) : h;
+  return `hsla(${hh.toFixed(1)},${s.toFixed(1)}%,${l.toFixed(1)}%,${a})`;
+}
+function glowState(t, B) {
+  const shift = S.glowAnim === "shift" ? t * 90 : 0, chase = S.glowAnim === "chase";
+  const cx = B.x + B.w / 2, cy = B.y + B.h / 2 - (B.tab ? B.tab.h / 2 : 0), rot = chase ? t * 2.6 : 0;
+  const k = S.glowAmt / 100 * (S.glowAnim === "pulse" ? .55 + .45 * (.5 + .5 * Math.sin(t * 4.2)) : 1);
+  const c1 = shiftColor(S.glow, shift), c2 = shiftColor(S.glow2, shift);
+  let style = c1, base = c1;
+  if (S.glowMode === "gradient") {
+    if (chase) { const g = ctx.createConicGradient(rot, cx, cy); g.addColorStop(0, c1); g.addColorStop(.5, c2); g.addColorStop(1, c1); style = g; }
+    else { const g = ctx.createLinearGradient(B.x, B.y, B.x + B.w, B.y + B.h); g.addColorStop(0, c1); g.addColorStop(1, c2); style = g; }
+  } else if (S.glowMode === "rainbow") {
+    const g = ctx.createConicGradient(rot + (S.glowAnim === "shift" ? t * 1.2 : 0), cx, cy);
+    for (let i = 0; i <= 9; i++) g.addColorStop(i / 9, `hsl(${toSafe(i * 30) % 360},95%,60%)`);
+    style = g; base = `hsl(${toSafe(t * 90) % 360},95%,60%)`;
+  } else if (chase) {
+    const g = ctx.createConicGradient(rot, cx, cy);
+    g.addColorStop(0, shiftColor(S.glow, shift, 1)); g.addColorStop(.22, shiftColor(S.glow, shift, .25));
+    g.addColorStop(.78, shiftColor(S.glow, shift, .25)); g.addColorStop(1, shiftColor(S.glow, shift, 1)); style = g;
+  }
+  return { style, base, k };
+}
+function glowHalo(path, G) {
+  const sz = S.glowSize / 100, passes = [[62, 16, .85], [26, 8, 1]], reps = Math.ceil(G.k);
+  passes.forEach(([bl, lw, al]) => {
+    for (let i = 0; i < reps; i++) {
+      path(); ctx.save(); ctx.filter = `blur(${bl * sz * BK}px)`;
+      ctx.globalAlpha *= Math.min(1, al * G.k / reps); ctx.lineWidth = lw + S.spread * 3; ctx.lineJoin = "round";
+      ctx.strokeStyle = G.style; ctx.stroke(); ctx.restore();
+    }
+  });
+}
+function drawCursor(tx, ty, t, tl) {
+  const start = tl.sendAt - CURSOR_IN;
+  if (t < start) return;
+  const k = Math.min(1, (t - start) / (CURSOR_IN - .05)), e = 1 - Math.pow(1 - k, 3);
+  const fx = tx + 330, fy = ty + 300, px = fx + (tx + 4 - fx) * e, py = fy + (ty + 6 - fy) * e;
+  const fade = Math.min(1, (t - start) / .15);
+  const down = t >= tl.sendAt && t < tl.sendAt + .14, s = down ? .86 : 1;
+  // click ripple
+  if (t >= tl.sendAt && t < tl.sendAt + .45) {
+    const q = (t - tl.sendAt) / .45;
+    ctx.save(); ctx.globalAlpha *= (1 - q) * .8; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(px, py, 18 + q * 70, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+  }
+  ctx.save(); ctx.globalAlpha *= fade; ctx.translate(px, py); ctx.scale(1.55 * s, 1.55 * s);
+  ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 10 * BK; ctx.shadowOffsetY = 4 * BK;
+  ctx.beginPath();  // classic arrow pointer, tip at 0,0
+  ctx.moveTo(0, 0); ctx.lineTo(0, 46); ctx.lineTo(11, 35); ctx.lineTo(19, 53); ctx.lineTo(27, 49); ctx.lineTo(19, 32); ctx.lineTo(34, 32); ctx.closePath();
+  ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
+  ctx.lineJoin = "round"; ctx.lineWidth = 3.2; ctx.strokeStyle = "#111111"; ctx.stroke();
+  ctx.restore();
+}
+
+/* ---------------- look thumbnails ---------------- */
+const GLOW_DEF = { glow2: "#22e3ff", glowAmt: 100, glowSize: 100, spread: 4, glowMode: "single", glowAnim: "none", neon: false, innerGlow: false, glowIcons: false };
+const GLOW_KEYS = ["glow", ...Object.keys(GLOW_DEF)];
+const lookGlow = L => { const o = { glow: L.glow }; Object.keys(GLOW_DEF).forEach(k => o[k] = L[k] ?? GLOW_DEF[k]); return o; };
+const thumbCv = document.createElement("canvas"); thumbCv.width = 480; thumbCv.height = 270;
+const thumbCtx = thumbCv.getContext("2d");
+let thumbTimer = null;
+function scheduleThumbs() { clearTimeout(thumbTimer); thumbTimer = setTimeout(() => { renderThumbs(); const t = sampleText(); document.querySelectorAll(".fopt .smp").forEach(el => { if (el.textContent !== t) el.textContent = t; }); }, 140); }
+function renderThumbs() {
+  const c = clips[cur] || { text: "Build me an obby with lava jumps", times: null, audio: null };
+  const main = ctx, keys = ["look", "effect", "glow", "bg", "font", "caret", "bold", "track", ...GLOW_KEYS], saved = {};
+  keys.forEach(k => saved[k] = S[k]);
+  ctx = thumbCtx; BK = .25; thumbCtx.setTransform(.25, 0, 0, .25, 0, 0);
+  try {
+    document.querySelectorAll(".look").forEach(btn => {
+      const L = LOOKS[btn.dataset.look];
+      Object.assign(S, { look: btn.dataset.look, effect: L.effect, bg: "green", font: "look", caret: "look", bold: false, track: 0 }, lookGlow(L), { glowAnim: "none" });
+      draw(c, restT(c));
+      const tc = btn.querySelector("canvas"), tx = tc.getContext("2d");
+      tx.clearRect(0, 0, tc.width, tc.height); tx.drawImage(thumbCv, 44, 25, 392, 220.5, 0, 0, tc.width, tc.height); // crop in so the box reads at card size
+    });
+  } finally { ctx = main; BK = 1; Object.assign(S, saved); }
+}
+
+
+/* ---------------- sound ---------------- */
+function noiseBuf(ac, len, pow) {
+  const n = Math.max(1, Math.floor(ac.sampleRate * len)), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, pow);
+  return b;
+}
+function burst(ac, dest, at, buf, type, freq, q, gain, rate = 1) {
+  const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = rate;
+  const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+  const g = ac.createGain(); g.gain.value = gain; s.connect(f).connect(g).connect(dest); s.start(at); return s;
+}
+function tone(ac, dest, at, f0, f1, dur, gain, type = "sine") {
+  const o = ac.createOscillator(); o.type = type;
+  o.frequency.setValueAtTime(f0, at); o.frequency.exponentialRampToValueAtTime(f1, at + dur);
+  const g = ac.createGain(); g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(Math.max(.0002, gain), at + .006); g.gain.exponentialRampToValueAtTime(.0001, at + dur);
+  o.connect(g).connect(dest); o.start(at); o.stop(at + dur + .03); return o;
+}
+function keySound(ac, dest, at, vol, mode, bufs) {
+  const j = .8 + Math.random() * .4;
+  if (mode === "soft") return [burst(ac, dest, at, bufs.short, "lowpass", 1500 * j, .7, vol * 1.1)];
+  if (mode === "mech") return [burst(ac, dest, at, bufs.short, "bandpass", 3300 * j, 1.4, vol * 1.05), burst(ac, dest, at + .004, bufs.long, "bandpass", 430 * j, 1.1, vol * 1.5)];
+  return [burst(ac, dest, at, bufs.short, "bandpass", 2400 + Math.random() * 1600, 1.2, vol * (.6 + Math.random() * .4), .8 + Math.random() * .5)];
+}
+function sendSfx(ac, dest, at, vol, kind) {
+  if (kind === "mouse") return [burst(ac, dest, at, noiseBuf(ac, .014, 9), "bandpass", 3600, 1.8, vol * 1.6), burst(ac, dest, at, noiseBuf(ac, .02, 9), "bandpass", 1300, 1.8, vol * 1.1), burst(ac, dest, at + .08, noiseBuf(ac, .01, 9), "bandpass", 4200, 1.8, vol * .8)];
+  if (kind === "pop") return [tone(ac, dest, at, 720, 170, .12, vol * .9)];
+  if (kind === "tap") return [burst(ac, dest, at, noiseBuf(ac, .03, 5), "lowpass", 900, .8, vol * 1.8), tone(ac, dest, at, 320, 150, .05, vol * .45)];
+  if (kind === "ding") return [tone(ac, dest, at, 1320, 1318, .55, vol * .35, "triangle"), tone(ac, dest, at, 1980, 1978, .4, vol * .14)];
+  return [];
+}
+function scheduleAudio(ac, dest, clip, start) {
+  const tl = timeline(clip), nodes = [];
+  if (S.voiceOn && clip.audio) {
+    const src = ac.createBufferSource(); src.buffer = clip.audio;
+    const g = ac.createGain(); g.gain.value = S.voiceVol; src.connect(g).connect(dest);
+    src.start(start + tl.t0); nodes.push(src);
+  }
+  if (S.clicks && S.clickVol > 0) {
+    const bufs = { short: noiseBuf(ac, .03, 6), long: noiseBuf(ac, .05, 4) };
+    let lastT = -1;
+    [...clip.text].forEach((ch, i) => {
+      if (/\s/.test(ch)) return;
+      const tt = tl.times[i]; if (tt === lastT) return; lastT = tt;
+      nodes.push(...keySound(ac, dest, start + tl.t0 + tt, S.clickVol, S.keyMode, bufs));
+    });
+  }
+  if (S.sendPress && S.sfx !== "none" && S.sfxVol > 0) nodes.push(...sendSfx(ac, dest, start + tl.sendAt + .01, S.sfxVol, S.sfx));
+  return nodes;
+}
+function stopNodes(nodes) { nodes.forEach(n => { try { n.stop(); } catch (e) {} }); }
+
+async function renderWav(clip) {
+  const tl = timeline(clip), sr = 48000;
+  const oac = new OfflineAudioContext(2, Math.ceil(tl.total * sr) + sr / 10, sr);
+  scheduleAudio(oac, oac.destination, clip, 0);
+  const buf = await oac.startRendering();
+  const nch = 2, len = buf.length, out = new DataView(new ArrayBuffer(44 + len * nch * 2));
+  const w = (o, s) => [...s].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); out.setUint32(4, 36 + len * nch * 2, true); w(8, "WAVE"); w(12, "fmt ");
+  out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, nch, true); out.setUint32(24, sr, true);
+  out.setUint32(28, sr * nch * 2, true); out.setUint16(32, nch * 2, true); out.setUint16(34, 16, true); w(36, "data"); out.setUint32(40, len * nch * 2, true);
+  const chs = [buf.getChannelData(0), buf.getChannelData(1)]; let o = 44;
+  for (let i = 0; i < len; i++) for (let c = 0; c < nch; c++) { const v = Math.max(-1, Math.min(1, chs[c][i])); out.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2; }
+  return new Blob([out], { type: "audio/wav" });
+}
+
+
+/* ---------------- preview playback ---------------- */
+let playing = null;
+function restT(c) { const tl = timeline(c); return Math.min(tl.typeEnd + .2, tl.sendAt - (S.sendPress && S.cursor ? CURSOR_IN + .02 : .01)); }
+function idleFrame() {
+  const c = clips[cur]; if (!c) { ctx.clearRect(0, 0, W, H); return; }
+  const tl = timeline(c); draw(c, restT(c));
+  $("clipInfo").textContent = `16:9 / ${tl.total.toFixed(1)} s`;
+  scheduleThumbs(); updateMeta();
+}
+function play() {
+  if (playing) return stop();
+  const c = clips[cur]; if (!c) return;
+  const ac = AC(); ac.resume();
+  const start = ac.currentTime + .05, nodes = scheduleAudio(ac, ac.destination, c, start), tl = timeline(c);
+  playing = { nodes }; $("playBtn").lastChild.textContent = " Stop";
+  const loop = () => {
+    if (!playing) return;
+    const t = ac.currentTime - start; draw(c, Math.max(0, t));
+    $("clipInfo").textContent = `16:9 / ${Math.max(0, t).toFixed(1)} of ${tl.total.toFixed(1)} s`;
+    if (t >= tl.total + .1) return stop();
+    playing.raf = requestAnimationFrame(loop);
+  };
+  loop();
+}
+function stop() {
+  if (!playing) return; stopNodes(playing.nodes); cancelAnimationFrame(playing.raf); playing = null;
+  $("playBtn").lastChild.textContent = " Preview"; idleFrame();
+}
+
+/* ---------------- export ---------------- */
+const QUALITY = { hi: { fps: 60, bps: 16e6 }, mid: { fps: 60, bps: 8e6 }, lo: { fps: 30, bps: 4e6 } };
+function pickMime(alpha) {
+  const list = alpha
+    ? ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]
+    : ["video/mp4;codecs=avc1.640028,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm"];
+  return list.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+}
+function slug(s, i) { return String(i + 1).padStart(2, "0") + "-" + (s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "clip"); }
+const IN_VIEWER = !!(window.claude && typeof window.claude.use === "function");
+let DL = null;
+if (IN_VIEWER) window.claude.use("downloads").then(d => { DL = d; }).catch(() => {});
+async function download(blob, name) {
+  if (IN_VIEWER) {
+    if (!DL) throw new Error("Saving files isn't available in this view.");
+    try { await DL.save({ filename: name, data: blob }); }
+    catch (e) { throw new Error(e && e.code === "declined" ? "Save cancelled." : (e && e.message) || "Couldn't save the file."); }
+    return;
+  }
+  const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000);
+}
+function updateMeta() {
+  const q = QUALITY[S.quality], mime = pickMime(S.fmt === "alpha") || "";
+  $("metaFmt").textContent = `1080p · ${q.fps} fps · ${mime.includes("mp4") ? "MP4" : "WEBM"}`;
+  $("metaClips").textContent = `${clips.length} clip${clips.length === 1 ? "" : "s"}`;
+  $("exportLabel").textContent = clips.length > 1 ? `Download all ${clips.length} clips` : "Download video";
+}
+let busy = false;
+async function recordClip(i) {
+  const c = clips[i], prevBg = S.bg, q = QUALITY[S.quality];
+  if (S.fmt === "green") S.bg = "green"; else if (S.bg === "green") S.bg = "transparent";
+  const mime = pickMime(S.fmt === "alpha");
+  if (!mime) { S.bg = prevBg; throw new Error("This browser can't record video. Open the tool in Chrome or Edge."); }
+  const ac = AC(); await ac.resume();
+  const dest = ac.createMediaStreamDestination();
+  const stream = new MediaStream([...cv.captureStream(q.fps).getVideoTracks(), ...dest.stream.getAudioTracks()]);
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: q.bps, audioBitsPerSecond: 192e3 });
+  const chunks = []; rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  const done = new Promise(r => rec.onstop = r);
+  draw(c, 0); rec.start(250);
+  const start = ac.currentTime + .15, tl = timeline(c), nodes = scheduleAudio(ac, dest, c, start);
+  await new Promise(res => {
+    const loop = () => {
+      const t = ac.currentTime - start; draw(c, Math.max(0, t));
+      $("exStatus").textContent = `Recording ${clips.length > 1 ? `clip ${i + 1} of ${clips.length} · ` : ""}${Math.max(0, t).toFixed(1)} / ${tl.total.toFixed(1)} s`;
+      if (t >= tl.total + .12) return res();
+      requestAnimationFrame(loop);
+    };
+    loop();
+  });
+  rec.stop(); await done; stopNodes(nodes); S.bg = prevBg;
+  const ext = mime.includes("mp4") ? "mp4" : "webm";
+  await download(new Blob(chunks, { type: mime.split(";")[0] }), slug(c.text, i) + (S.fmt === "green" ? "-green" : "") + "." + ext);
+}
+async function runExport() {
+  if (busy || !clips.length) return; stop(); busy = true; setBusy(true);
+  try {
+    const idx = clips.map((_, i) => i);
+    for (const i of idx) { cur = i; renderClipList(); await recordClip(i); }
+    setStatus("exStatus", `Saved ${idx.length} clip${idx.length > 1 ? "s" : ""}.`, "ok");
+  } catch (e) { setStatus("exStatus", e.message, "err"); }
+  busy = false; setBusy(false); idleFrame();
+}
+function setBusy(b) { ["exportBtn", "exportWav", "genBtn", "listenBtn", "playBtn"].forEach(id => $(id).disabled = b); }
+function setStatus(id, msg, kind) { const el = $(id); el.textContent = msg; el.className = "status" + (kind ? " " + kind : ""); }
+
+/* ---------------- voice helpers ---------------- */
+function b64ToBuf(b64) { const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; }
+// Map provider characters (which may differ slightly from our text) onto each char of our text.
+function alignChars(text, chars, starts) {
+  if (!chars || !starts || !starts.length) return null;
+  const n = text.length, out = new Array(n).fill(null); let j = 0;
+  for (let i = 0; i < n; i++) {
+    const ch = text[i];
+    if (/\s/.test(ch)) continue;
+    for (let k = j; k < Math.min(chars.length, j + 6); k++) {
+      if ((chars[k] || "").toLowerCase() === ch.toLowerCase()) { out[i] = starts[k]; j = k + 1; break; }
+    }
+  }
+  // fill unmatched (spaces, normalized symbols) from neighbours, keep times increasing
+  let last = 0;
+  for (let i = 0; i < n; i++) {
+    if (out[i] == null) { let nx = null; for (let k = i + 1; k < n; k++) if (out[k] != null) { nx = out[k]; break; } out[i] = nx == null ? last : (last + nx) / 2; }
+    out[i] = Math.max(last, out[i]); last = out[i];
+  }
+  return out;
+}
+function wordsToChars(text, words, ws, we) {
+  // expand word timestamps into per-character times
+  const chars = [], starts = [];
+  words.forEach((w, k) => { const a = ws[k], b = we[k] ?? a; [...w].forEach((ch, m) => { chars.push(ch); starts.push(a + (b - a) * m / Math.max(1, w.length)); }); });
+  return alignChars(text, chars, starts);
+}
+function detectSpeech(buf) {
+  const d = buf.getChannelData(0), win = Math.floor(buf.sampleRate * .02), rms = [];
+  for (let i = 0; i < d.length; i += win) { let s = 0; for (let j = i; j < Math.min(d.length, i + win); j++) s += d[j] * d[j]; rms.push(Math.sqrt(s / win)); }
+  const peak = Math.max(...rms), th = peak * .08;
+  const a = rms.findIndex(v => v > th), b = rms.length - 1 - [...rms].reverse().findIndex(v => v > th);
+  return [Math.max(0, a) * .02, Math.max(a + 1, b) * .02];
+}
+function spreadTimes(text, s, e) {
+  const wts = [...text].map(ch => ch === " " ? 1.6 : /[,;:]/.test(ch) ? 4 : /[.!?]/.test(ch) ? 6 : 1);
+  const tot = wts.reduce((p, v) => p + v, 0); let acc = 0;
+  return wts.map(wt => { const t = s + (acc / tot) * (e - s); acc += wt; return t; });
+}
+
+
+/* ---------------- voiceover ---------------- */
+const provOf = m => m === "upload" ? "upload" : m.startsWith("inworld") ? "inworld" : "eleven";
+const store = {
+  get(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+function syncVoiceUI() {
+  const m = $("vModel").value, p = provOf(m);
+  document.querySelectorAll("#voiceBody .api").forEach(el => el.hidden = p === "upload");
+  document.querySelectorAll("#voiceBody .upl").forEach(el => el.hidden = p !== "upload");
+  $("keyLabel").textContent = p === "inworld" ? "Inworld API key" : "ElevenLabs API key";
+  $("keyIn").placeholder = p === "inworld" ? "Basic (Base64) key" : "sk_…";
+  $("voiceIdIn").placeholder = p === "inworld" ? "e.g. Ashley" : "Paste your ElevenLabs voice ID";
+  if (p !== "upload") { $("keyIn").value = store.get("key_" + p); $("voiceIdIn").value = store.get("vid_" + p); }
+  $("genLabel").textContent = p === "upload" ? "Choose audio file" : (clips.length > 1 ? "Generate voice for all clips" : "Generate voice");
+  $("vFoot").textContent = p === "upload"
+    ? "Typing is spread across the speech found in your file. Close, but ElevenLabs and Inworld sync letter by letter."
+    : `API keys and voice IDs save separately per provider, in this browser only. Generating uses your ${p === "inworld" ? "Inworld" : "ElevenLabs"} credits.`;
+  updateReady();
+}
+function updateReady() {
+  const n = clips.filter(c => c.audio).length;
+  $("readyInfo").textContent = `${n}/${clips.length} ready`;
+  const c = clips[cur];
+  $("vCurrent").hidden = !(S.voiceOn && clips.length > 1);
+  $("vCurrent").textContent = c ? `clip ${String(cur + 1).padStart(2, "0")} · ${c.audio ? c.src : "no voice"}` : "";
+}
+const voiceFetchError = (e, name) => e instanceof TypeError
+  ? (IN_VIEWER ? `This web link can't reach ${name}. Use the downloaded Prompt Studio file for voices.` : `Couldn't reach ${name}. Check your connection.`)
+  : e.message;
+async function elevenVoice(i) {
+  const key = $("keyIn").value.trim(), vid = $("voiceIdIn").value.trim();
+  if (!key) throw new Error("Paste your ElevenLabs API key first."); if (!vid) throw new Error("Paste your ElevenLabs voice ID first.");
+  const c = clips[i]; c.busy = true; renderClipList();
+  try {
+    const body = { text: c.text, model_id: $("vModel").value };
+    if (Math.abs(S.speed - 1) > .001) body.voice_settings = { speed: Math.min(1.2, Math.max(.7, S.speed)) };
+    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(vid)}/with-timestamps?output_format=mp3_44100_128`, {
+      method: "POST", headers: { "xi-api-key": key, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) { const t = await r.text(); let m = t; try { const j = JSON.parse(t); m = (j.detail && (j.detail.message || j.detail)) || t; } catch (e) {} throw new Error(`ElevenLabs said ${r.status}: ${String(typeof m === "string" ? m : JSON.stringify(m)).slice(0, 160)}`); }
+    const j = await r.json();
+    { const raw = b64ToBuf(j.audio_base64); c.raw = raw.slice(0); c.audio = await AC().decodeAudioData(raw); }
+    const al = j.alignment || j.normalized_alignment || {};
+    c.times = alignChars(c.text, al.characters, al.character_start_times_seconds) || spreadTimes(c.text, ...detectSpeech(c.audio));
+    c.src = "ElevenLabs";
+  } finally { c.busy = false; renderClipList(); }
+}
+async function inworldVoice(i) {
+  const key = $("keyIn").value.trim().replace(/^Basic\s+/i, ""), vid = $("voiceIdIn").value.trim();
+  if (!key) throw new Error("Paste your Inworld API key first."); if (!vid) throw new Error("Paste your Inworld voice ID first.");
+  const c = clips[i];
+  if (c.text.length > 2000) throw new Error(`Clip ${i + 1} is over Inworld's 2,000 character limit.`);
+  c.busy = true; renderClipList();
+  try {
+    const call = async type => {
+      const r = await fetch("https://api.inworld.ai/tts/v1/voice", {
+        method: "POST", headers: { Authorization: "Basic " + key, "Content-Type": "application/json" },
+        body: JSON.stringify({ text: c.text, voiceId: vid, modelId: $("vModel").value,
+          audioConfig: { audioEncoding: "MP3", speakingRate: Math.min(1.5, Math.max(.5, S.speed)) }, timestampType: type }) });
+      if (!r.ok) { const t = await r.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(`Inworld said ${r.status}: ${String(m).slice(0, 160)}`); }
+      return r.json();
+    };
+    let j = await call("CHARACTER");
+    const ti = j.timestampInfo || {};
+    let times = null;
+    if (ti.characterAlignment) times = alignChars(c.text, ti.characterAlignment.characters, ti.characterAlignment.characterStartTimeSeconds);
+    if (!times && ti.wordAlignment) times = wordsToChars(c.text, ti.wordAlignment.words, ti.wordAlignment.wordStartTimeSeconds, ti.wordAlignment.wordEndTimeSeconds);
+    if (!times) { j = await call("WORD"); const wa = (j.timestampInfo || {}).wordAlignment; if (wa) times = wordsToChars(c.text, wa.words, wa.wordStartTimeSeconds, wa.wordEndTimeSeconds); }
+    { const raw = b64ToBuf(j.audioContent); c.raw = raw.slice(0); c.audio = await AC().decodeAudioData(raw); }
+    if (!times) times = spreadTimes(c.text, ...detectSpeech(c.audio));
+    c.times = times; c.src = "Inworld";
+  } finally { c.busy = false; renderClipList(); }
+}
+async function generateVoices() {
+  const p = provOf($("vModel").value);
+  if (p === "upload") { $("audioFile").click(); return; }
+  if (busy) return; busy = true; setBusy(true);
+  const name = p === "inworld" ? "Inworld" : "ElevenLabs", fn = p === "inworld" ? inworldVoice : elevenVoice;
+  try {
+    for (let i = 0; i < clips.length; i++) { setStatus("vStatus", clips.length > 1 ? `Generating ${i + 1} of ${clips.length}…` : "Generating…"); await fn(i); }
+    setStatus("vStatus", "Voice ready. Hit Listen or Preview.", "ok"); saveVoices();
+  } catch (e) { setStatus("vStatus", voiceFetchError(e, name), "err"); }
+  busy = false; setBusy(false); updateReady(); idleFrame();
+}
+let listenNode = null;
+function listen() {
+  const c = clips[cur];
+  if (listenNode) { try { listenNode.stop(); } catch (e) {} listenNode = null; $("listenBtn").lastChild.textContent = " Listen"; return; }
+  if (!c || !c.audio) return setStatus("vStatus", "Generate or upload a voice first.", "err");
+  const ac = AC(); ac.resume();
+  const s = ac.createBufferSource(); s.buffer = c.audio; const g = ac.createGain(); g.gain.value = S.voiceVol;
+  s.connect(g).connect(ac.destination); s.start(); listenNode = s; $("listenBtn").lastChild.textContent = " Stop";
+  s.onended = () => { if (listenNode === s) { listenNode = null; $("listenBtn").lastChild.textContent = " Listen"; } };
+}
+
+/* ---------------- clips ---------------- */
+function readClips() {
+  const raw = $("script").value;
+  return S.multi ? raw.split("\n").map(s => s.trim()).filter(Boolean) : [raw.replace(/\s*\n\s*/g, " ").trim()].filter(Boolean);
+}
+function syncClips() {
+  const texts = readClips(), old = clips;
+  clips = texts.map(text => old.find(c => c.text === text) || { text, audio: null, times: null, src: null });
+  cur = Math.min(cur, Math.max(0, clips.length - 1));
+  const n = $("script").value.trim().length;
+  $("charCount").textContent = S.multi ? `${clips.length} clip${clips.length === 1 ? "" : "s"}` : `${n} character${n === 1 ? "" : "s"}`;
+  renderClipList(); syncVoiceUI(); idleFrame(); scheduleLoadVoices();
+}
+function renderClipList() {
+  const el = $("clipList"); el.innerHTML = ""; el.hidden = !S.multi || !clips.length;
+  if (S.multi) clips.forEach((c, i) => {
+    const b = document.createElement("button"); b.className = "clip" + (i === cur ? " on" : "");
+    const tl = timeline(c);
+    const pill = c.busy ? `<span class="pill busy">voicing…</span>` : c.audio && S.voiceOn ? `<span class="pill ok">${c.src} · ${tl.total.toFixed(1)}s</span>` : `<span class="pill">${tl.total.toFixed(1)}s</span>`;
+    b.innerHTML = `<span class="n">${String(i + 1).padStart(2, "0")}</span><span class="t"></span>${pill}`;
+    b.querySelector(".t").textContent = c.text;
+    b.onclick = () => { stop(); cur = i; renderClipList(); idleFrame(); };
+    el.appendChild(b);
+  });
+  updateReady();
+}
+
+/* ---------------- controls ---------------- */
+function bindRange(id, key, fmt, label, map = v => +v) {
+  const f = () => { S[key] = map($(id).value); if (label) $(label).textContent = fmt(S[key]); renderClipList(); idleFrame(); };
+  $(id).addEventListener("input", f); f();
+}
+bindRange("round", "round", v => v + "%", "vRound");
+bindRange("bw", "bw", v => v + "%", "vW");
+bindRange("bh", "bh", v => v + "%", "vH");
+bindRange("cps", "cps", v => v + "/s", "vCps");
+bindRange("leadMs", "leadMs", v => v + " ms", "vLead");
+bindRange("glowAmt", "glowAmt", v => v + "%", "vGa");
+bindRange("glowSize", "glowSize", v => v, "vGs");
+bindRange("spread", "spread", v => v, "vSp");
+bindRange("clickVol", "clickVol", v => Math.round(v * 100) + "%", "vCv", v => v / 100);
+bindRange("sfxVol", "sfxVol", v => Math.round(v * 100) + "%", "vSv", v => v / 100);
+bindRange("voiceVol", "voiceVol", v => Math.round(v * 100) + "%", "vVv", v => v / 100);
+bindRange("speed", "speed", v => v.toFixed(2) + "×", "vSpeed", v => v / 100);
+// text size: slider + number box
+const setTs = v => { v = Math.max(36, Math.min(96, Math.round(+v || 62))); S.ts = v; $("ts").value = v; $("tsNum").value = v; idleFrame(); };
+$("ts").addEventListener("input", () => setTs($("ts").value));
+$("tsNum").addEventListener("change", () => setTs($("tsNum").value));
+// pause before send: number + slider
+const setHold = v => { v = Math.max(0, Math.min(3, Math.round((+v || 0) * 10) / 10)); S.hold = v; $("hold").value = Math.round(v * 10); $("holdNum").value = v.toFixed(1); renderClipList(); idleFrame(); };
+$("hold").addEventListener("input", () => setHold($("hold").value / 10));
+$("holdNum").addEventListener("change", () => setHold($("holdNum").value));
+$("typeTime").addEventListener("input", () => { const v = parseFloat($("typeTime").value); S.typeTime = v > 0 ? Math.min(20, v) : 0; syncTimingUI(); renderClipList(); idleFrame(); });
+function syncTimingUI() {
+  const synced = S.voiceOn && S.sync && clips[cur] && clips[cur].audio;
+  $("typeTimeRow").classList.toggle("dis", !!synced); $("typeTime").disabled = !!synced;
+  $("cpsRow").hidden = S.typeTime > 0;
+  $("sendOpts").classList.toggle("off", !S.sendPress);
+}
+// selects and text fields
+[["bgMode", "bg"], ["tabName", "tabName"], ["caretPick", "caret"], ["phText", "phText"], ["keyMode", "keyMode"], ["sfx", "sfx"], ["reveal", "reveal"], ["fmt", "fmt"], ["quality", "quality"]].forEach(([id, key]) =>
+  $(id).addEventListener("input", () => { S[key] = $(id).value; renderClipList(); idleFrame(); }));
+// toggles
+["sendPress", "cursor", "fadeOut", "clicks", "showTab", "showLogo", "placeholder", "idle", "natural", "sync"].forEach(id =>
+  $(id).addEventListener("change", () => {
+    S[id] = $(id).checked;
+    $("phWrap").hidden = !S.placeholder; $("tabWrap").hidden = !S.showTab; $("logoDrop").hidden = !S.showLogo;
+    syncTimingUI(); renderClipList(); idleFrame();
+  }));
+$("voiceOn").addEventListener("change", () => {
+  S.voiceOn = $("voiceOn").checked; $("voiceBody").hidden = !S.voiceOn; $("voiceOff").hidden = S.voiceOn;
+  syncTimingUI(); renderClipList(); idleFrame();
+});
+$("vModel").addEventListener("change", () => { store.set("vModel", $("vModel").value); syncVoiceUI(); });
+$("keyIn").addEventListener("input", () => { const p = provOf($("vModel").value); if (p !== "upload") store.set("key_" + p, $("keyIn").value.trim()); });
+$("voiceIdIn").addEventListener("input", () => { const p = provOf($("vModel").value); if (p !== "upload") store.set("vid_" + p, $("voiceIdIn").value.trim()); });
+$("genBtn").addEventListener("click", generateVoices);
+$("listenBtn").addEventListener("click", listen);
+$("audioFile").addEventListener("change", async e => {
+  const f = e.target.files[0], c = clips[cur]; if (!f || !c) return;
+  try {
+    const ab = await f.arrayBuffer(), raw = ab.slice(0);
+    const buf = await AC().decodeAudioData(ab);
+    const [s0, e0] = detectSpeech(buf);
+    c.audio = buf; c.raw = raw; c.times = spreadTimes(c.text, s0, e0); c.src = "Upload"; saveVoices();
+    $("audioLabel").textContent = f.name;
+    setStatus("vStatus", `Synced to the speech from ${s0.toFixed(2)}s to ${e0.toFixed(2)}s.`, "ok");
+  } catch (err) { setStatus("vStatus", "Couldn't read that audio file. Try MP3 or WAV.", "err"); }
+  e.target.value = ""; renderClipList(); syncTimingUI(); idleFrame();
+});
+$("sfxListen").addEventListener("click", () => { const ac = AC(); ac.resume(); sendSfx(ac, ac.destination, ac.currentTime + .02, Math.max(.2, S.sfxVol), S.sfx === "none" ? "mouse" : S.sfx); });
+
+// model label
+function syncModel() {
+  const v = $("modelPick").value, custom = v === "__custom";
+  $("customWrap").hidden = !custom;
+  S.model = custom ? ($("modelName").value.trim() || " ") : v; idleFrame();
+}
+$("modelPick").addEventListener("change", () => { if ($("modelPick").value === "__custom") $("modelName").value = S.model; syncModel(); if (!$("customWrap").hidden) $("modelName").focus(); });
+$("modelName").addEventListener("input", syncModel);
+$("logoFile").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image(); img.onload = () => { S.logo = img; $("logoLabel").textContent = f.name; idleFrame(); }; img.src = URL.createObjectURL(f);
+  idb.set("logo", f).catch(() => {});
+});
+// attached images
+function renderImgs() {
+  const t = $("thumbs"); t.innerHTML = "";
+  IMGS.forEach((im, i) => {
+    const d = document.createElement("div"); d.className = "thumb";
+    const img = document.createElement("img"); img.src = im.url; img.alt = "";
+    const x = document.createElement("button"); x.textContent = "✕"; x.setAttribute("aria-label", "Remove image");
+    x.onclick = () => { URL.revokeObjectURL(im.url); IMGS.splice(i, 1); renderImgs(); saveImages(); idleFrame(); };
+    d.append(img, x); t.appendChild(d);
+  });
+  $("imgCount").textContent = `${IMGS.length}/3`;
+}
+$("imgFile").addEventListener("change", e => {
+  [...e.target.files].slice(0, 3 - IMGS.length).forEach(f => {
+    const url = URL.createObjectURL(f), img = new Image();
+    img.onload = () => { if (IMGS.length < 3) IMGS.push({ img, url, blob: f }); renderImgs(); saveImages(); idleFrame(); }; img.src = url;
+  });
+  e.target.value = "";
+});
+// script + modes
+$("script").addEventListener("input", syncClips);
+document.querySelectorAll("#modeSeg button").forEach(b => b.addEventListener("click", () => {
+  S.multi = b.dataset.m === "multi";
+  document.querySelectorAll("#modeSeg button").forEach(x => x.classList.toggle("on", x === b));
+  $("promptTitle").textContent = S.multi ? "Your script" : "Your prompt";
+  $("multiHint").hidden = !S.multi;
+  if (!S.multi && $("script").value.includes("\n")) $("script").value = $("script").value.split("\n").map(x => x.trim()).filter(Boolean)[0] || "";
+  if (S.multi && !$("script").value.includes("\n")) $("script").value = $("script").value.trim() + "\nMake a low-poly wooden treasure chest with gold trim\nGenerate a 32x32 pixel sword icon for the inventory";
+  stop(); syncClips();
+}));
+$("playBtn").addEventListener("click", play);
+$("exportBtn").addEventListener("click", runExport);
+$("exportWav").addEventListener("click", async () => {
+  const c = clips[cur]; if (!c) return;
+  try { await download(await renderWav(c), slug(c.text, cur) + ".wav"); } catch (e) { return setStatus("exStatus", e.message, "err"); }
+  setStatus("exStatus", "Saved the audio track, timed to match the video.", "ok");
+});
+// tabs
+const tabs = (bar, attr, panes, paneAttr) => document.querySelectorAll(`#${bar} button`).forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(`#${bar} button`).forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(panes).forEach(p => p.hidden = p.dataset[paneAttr] !== b.dataset[attr]);
+}));
+tabs("dtabs", "t", ".dpane", "pane");
+tabs("stabs", "t", ".pane", "spane");
+document.querySelectorAll("#effects button").forEach(btn => btn.addEventListener("click", () => { S.effect = btn.dataset.e; syncGlowSections(); idleFrame(); }));
+
+/* ---------------- fonts, glow colours, looks ---------------- */
+function sampleText() { const c = clips[cur]; return (c && c.text) || "Add a forest map"; }
+function buildFontGrid() {
+  const g = $("fontGrid"); g.innerHTML = "";
+  const add = (key, label, fam, weight) => {
+    const b = document.createElement("button"); b.className = "fopt"; b.dataset.f = key; b.setAttribute("role", "option");
+    const smp = document.createElement("span"); smp.className = "smp"; smp.textContent = sampleText(); smp.style.fontFamily = fam; smp.style.fontWeight = weight;
+    if (key !== "look") smp.style.fontSize = Math.round(19 * FONTS[key].k) + "px";
+    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = label;
+    b.append(smp, nm); b.addEventListener("click", () => { S.font = key; syncFontUI(); idleFrame(); }); return b;
+  };
+  const lf = fontOf(curLook());
+  g.appendChild(add("look", "Look default", lf.fam, lf.w));
+  let grp = null;
+  Object.entries(FONTS).forEach(([k, f]) => {
+    if (f.group !== grp) { grp = f.group; const h = document.createElement("h4"); h.textContent = grp; g.appendChild(h); }
+    g.appendChild(add(k, f.name, f.fam, f.w));
+  });
+  syncFontUI();
+}
+function syncFontUI() {
+  document.querySelectorAll(".fopt").forEach(b => { const on = b.dataset.f === S.font; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+  $("boldBtn").setAttribute("aria-pressed", S.bold); $("track").value = S.track; $("vTrack").textContent = S.track + " px";
+}
+$("boldBtn").addEventListener("click", () => { S.bold = !S.bold; syncFontUI(); idleFrame(); });
+$("resetType").addEventListener("click", () => { S.font = "look"; S.bold = false; S.track = 0; S.caret = "look"; $("caretPick").value = "look"; syncFontUI(); idleFrame(); });
+$("track").addEventListener("input", () => { S.track = +$("track").value; $("vTrack").textContent = S.track + " px"; idleFrame(); });
+const SWATCHES = ["#a855f7", "#7c3aed", "#6366f1", "#3b82f6", "#22e3ff", "#10b981", "#22c55e", "#facc15",
+  "#ffb000", "#f97316", "#ef4444", "#c0141c", "#ff5fa2", "#ec4899", "#ffffff", "#000000"];
+let recentColors = [];
+try { recentColors = JSON.parse(localStorage.getItem("recentColors") || "[]"); } catch (e) {}
+function swatchBtn(c, onPick) {
+  const b = document.createElement("button"); b.className = "sw"; b.style.background = c; b.dataset.c = c;
+  b.title = c.toUpperCase(); b.setAttribute("aria-label", c.toUpperCase()); b.addEventListener("click", () => onPick(c)); return b;
+}
+SWATCHES.forEach(c => $("swatches").appendChild(swatchBtn(c, setGlow)));
+function syncGlowUI() {
+  if ($("chip2")) syncGlow2UI();
+  const c = S.glow.toLowerCase();
+  $("chip").style.background = c; $("hexIn").value = c.toUpperCase(); $("hexIn").classList.remove("bad");
+  try { $("glowColor").value = c; } catch (e) {}
+  document.querySelectorAll("#swatches .sw").forEach(b => { const on = b.dataset.c === c; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+  $("recent").hidden = !recentColors.length; $("recentList").innerHTML = "";
+  recentColors.forEach(rc => $("recentList").appendChild(swatchBtn(rc, setGlow)));
+}
+function setGlow(c, remember) {
+  S.glow = c.toLowerCase();
+  if (remember && !SWATCHES.includes(S.glow)) {
+    recentColors = [S.glow, ...recentColors.filter(x => x !== S.glow)].slice(0, 6);
+    try { localStorage.setItem("recentColors", JSON.stringify(recentColors)); } catch (e) {}
+  }
+  syncGlowUI(); idleFrame();
+}
+$("hexIn").addEventListener("input", () => {
+  let v = $("hexIn").value.trim(); if (v && v[0] !== "#") v = "#" + v;
+  const ok = /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test(v);
+  $("hexIn").classList.toggle("bad", !ok && v.length > 1);
+  if (ok) { if (v.length === 4) v = "#" + [...v.slice(1)].map(ch => ch + ch).join(""); S.glow = v.toLowerCase(); $("chip").style.background = v; idleFrame(); }
+});
+$("hexIn").addEventListener("change", () => setGlow(S.glow, true));
+const openNative = () => { try { $("glowColor").showPicker ? $("glowColor").showPicker() : $("glowColor").click(); } catch (e) { $("glowColor").click(); } };
+$("moreColor").addEventListener("click", openNative); $("chip").addEventListener("click", openNative);
+$("glowColor").addEventListener("input", () => { S.glow = $("glowColor").value; $("chip").style.background = S.glow; $("hexIn").value = S.glow.toUpperCase(); idleFrame(); });
+$("glowColor").addEventListener("change", () => setGlow($("glowColor").value, true));
+function syncGlowSections() {
+  const e = S.effect;
+  document.querySelectorAll('[data-pane="glow"] .gonly').forEach(el => el.classList.toggle("off", e !== "glow"));
+  document.querySelectorAll('[data-pane="glow"] .lit').forEach(el => el.classList.toggle("off", e !== "glow" && e !== "outline"));
+  document.querySelectorAll("#effects button").forEach(b => b.classList.toggle("on", b.dataset.e === e));
+  document.querySelectorAll("#glowMode button").forEach(b => b.classList.toggle("on", b.dataset.m === S.glowMode));
+  document.querySelectorAll("#glowAnim button").forEach(b => b.classList.toggle("on", b.dataset.a === S.glowAnim));
+  $("c1Box").hidden = S.glowMode === "rainbow"; $("c2Box").hidden = S.glowMode !== "gradient"; $("rainbowNote").hidden = S.glowMode !== "rainbow";
+  [["glowSize", "vGs", ""], ["glowAmt", "vGa", "%"], ["spread", "vSp", ""]].forEach(([id, lab, u]) => { $(id).value = S[id]; $(lab).textContent = S[id] + u; });
+  ["neon", "innerGlow", "glowIcons"].forEach(id => $(id).checked = !!S[id]);
+}
+function applyLookGlow(L) { S.effect = L.effect; Object.assign(S, lookGlow(L)); syncGlowUI(); syncGlowSections(); }
+document.querySelectorAll("#glowMode button").forEach(b => b.addEventListener("click", () => { S.glowMode = b.dataset.m; syncGlowSections(); idleFrame(); }));
+document.querySelectorAll("#glowAnim button").forEach(b => b.addEventListener("click", () => { S.glowAnim = b.dataset.a; syncGlowSections(); idleFrame(); }));
+["neon", "innerGlow", "glowIcons"].forEach(id => $(id).addEventListener("change", () => { S[id] = $(id).checked; idleFrame(); }));
+// second colour picker
+SWATCHES.forEach(c => $("swatches2").appendChild(swatchBtn(c, setGlow2)));
+function syncGlow2UI() {
+  const c = S.glow2.toLowerCase(); $("chip2").style.background = c; $("hexIn2").value = c.toUpperCase(); $("hexIn2").classList.remove("bad");
+  try { $("glowColor2").value = c; } catch (e) {}
+  document.querySelectorAll("#swatches2 .sw").forEach(b => b.classList.toggle("on", b.dataset.c === c));
+}
+function setGlow2(c) { S.glow2 = c.toLowerCase(); syncGlow2UI(); idleFrame(); }
+$("hexIn2").addEventListener("input", () => {
+  let v = $("hexIn2").value.trim(); if (v && v[0] !== "#") v = "#" + v;
+  const ok = /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test(v); $("hexIn2").classList.toggle("bad", !ok && v.length > 1);
+  if (ok) { if (v.length === 4) v = "#" + [...v.slice(1)].map(ch => ch + ch).join(""); S.glow2 = v.toLowerCase(); $("chip2").style.background = v; idleFrame(); }
+});
+$("hexIn2").addEventListener("change", () => setGlow2(S.glow2));
+const openNative2 = () => { try { $("glowColor2").showPicker ? $("glowColor2").showPicker() : $("glowColor2").click(); } catch (e) { $("glowColor2").click(); } };
+$("moreColor2").addEventListener("click", openNative2); $("chip2").addEventListener("click", openNative2);
+$("glowColor2").addEventListener("input", () => setGlow2($("glowColor2").value));
+function pickLook(id) {
+  const L = LOOKS[id]; S.look = id; S.font = "look"; S.caret = "look"; S.bold = false; S.track = 0;
+  applyLookGlow(L); buildFontGrid(); $("caretPick").value = "look";
+  document.querySelectorAll(".look").forEach(b => { b.classList.toggle("on", b.dataset.look === id); b.setAttribute("aria-pressed", b.dataset.look === id); });
+  idleFrame();
+}
+Object.entries(LOOKS).forEach(([id, L]) => {
+  const b = document.createElement("button"); b.className = "look" + (id === S.look ? " on" : ""); b.dataset.look = id; b.setAttribute("aria-pressed", id === S.look);
+  const c = document.createElement("canvas"); c.width = 320; c.height = 180;
+  const n = document.createElement("span"); n.textContent = L.name;
+  b.append(c, n); b.addEventListener("click", () => pickLook(id)); $("looks").appendChild(b);
+});
+
+
+/* ---------------- white box + resets ---------------- */
+let lastDarkLook = "forgegui";
+const _pickLook = pickLook;
+pickLook = function (id) {
+  if (id !== "white") lastDarkLook = id;
+  _pickLook(id); $("whiteBox").checked = id === "white";
+};
+$("whiteBox").addEventListener("change", () => pickLook($("whiteBox").checked ? "white" : lastDarkLook));
+
+const RESETS = {
+  shape: ["bgMode", "round", "bw", "bh"],
+  timing: ["idle", "natural", "typeTime", "cps", "holdNum", "leadMs", "sendPress", "cursor", "fadeOut"],
+  sound: ["clicks", "keyMode", "clickVol", "sfx", "sfxVol"],
+  style: ["placeholder", "phText", "showTab", "tabName", "showLogo", "tsNum"],
+};
+const DEFAULTS = {};
+Object.values(RESETS).flat().forEach(id => {
+  const el = $(id);
+  DEFAULTS[id] = el.type === "checkbox" ? el.defaultChecked
+    : el.tagName === "SELECT" ? ([...el.options].find(o => o.defaultSelected) || el.options[0]).value : el.defaultValue;
+});
+function resetGroup(name) {
+  RESETS[name].forEach(id => {
+    const el = $(id);
+    if (el.type === "checkbox") { el.checked = DEFAULTS[id]; el.dispatchEvent(new Event("change")); }
+    else { el.value = DEFAULTS[id]; el.dispatchEvent(new Event(el.type === "number" ? "change" : "input")); if (el.type === "number") el.dispatchEvent(new Event("input")); }
+  });
+}
+function resetDesign() {
+  resetGroup("shape"); pickLook("forgegui");
+  S.font = "look"; S.bold = false; S.track = 0; S.caret = "look"; $("caretPick").value = "look"; syncFontUI(); idleFrame();
+}
+document.querySelectorAll("[data-reset]").forEach(btn => btn.addEventListener("click", () => {
+  const which = btn.dataset.reset;
+  if (which === "glow") { applyLookGlow(curLook()); idleFrame(); return; }
+  resetGroup(which);
+}));
+$("resetDesign").addEventListener("click", resetDesign);
+$("resetAll").addEventListener("click", () => {
+  resetDesign(); ["timing", "sound", "style"].forEach(resetGroup);
+  $("modelPick").value = "Claude Opus 5.5"; syncModel();
+});
+
+/* ---------------- saved work (stays in this browser) ---------------- */
+const idb = (() => {
+  let p;
+  const open = () => p ||= new Promise((res, rej) => {
+    const r = indexedDB.open("prompt-studio", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+  const run = async (mode, fn) => {
+    const db = await open();
+    return new Promise((res, rej) => { const t = db.transaction("kv", mode), req = fn(t.objectStore("kv")); t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error); });
+  };
+  return { get: k => run("readonly", st => st.get(k)), set: (k, v) => run("readwrite", st => st.put(v, k)) };
+})();
+async function saveVoices() {
+  try {
+    const map = (await idb.get("voices")) || {};
+    clips.forEach(c => { if (c.audio && c.raw) map[c.text] = { raw: c.raw, times: c.times, src: c.src, t: Date.now() }; });
+    const keep = Object.keys(map).sort((a, b) => map[b].t - map[a].t).slice(0, 40), out = {};
+    keep.forEach(k => out[k] = map[k]);
+    await idb.set("voices", out);
+  } catch (e) {}
+}
+let voiceLoadTimer = null;
+function scheduleLoadVoices() { clearTimeout(voiceLoadTimer); voiceLoadTimer = setTimeout(loadVoices, 250); }
+async function loadVoices() {
+  try {
+    if (!clips.some(c => !c.audio)) return;
+    const map = await idb.get("voices"); if (!map) return;
+    let any = false;
+    for (const c of clips) {
+      const v = map[c.text];
+      if (v && !c.audio) { c.audio = await AC().decodeAudioData(v.raw.slice(0)); c.raw = v.raw; c.times = v.times; c.src = v.src; any = true; }
+    }
+    if (any) { renderClipList(); syncTimingUI(); idleFrame(); }
+  } catch (e) {}
+}
+function saveImages() { idb.set("images", IMGS.map(i => i.blob).filter(Boolean)).catch(() => {}); }
+async function loadMedia() {
+  try {
+    const blobs = (await idb.get("images")) || [];
+    blobs.slice(0, 3).forEach(blob => {
+      const url = URL.createObjectURL(blob), img = new Image();
+      img.onload = () => { if (IMGS.length < 3) IMGS.push({ img, url, blob }); renderImgs(); idleFrame(); }; img.src = url;
+    });
+    const logo = await idb.get("logo");
+    if (logo) { const img = new Image(); img.onload = () => { S.logo = img; $("logoLabel").textContent = logo.name || "Your logo"; idleFrame(); }; img.src = URL.createObjectURL(logo); }
+  } catch (e) {}
+}
+// settings, script and choices: every control's value plus the few choices made with buttons
+const STATE_KEY = "ps_state", NONCTRL = ["look", "effect", "glow", "glow2", "glowMode", "glowAnim", "font", "bold", "multi"];
+const SKIP = new Set(["keyIn", "voiceIdIn", "whiteBox", "hexIn", "hexIn2", "glowColor", "glowColor2", "tsNum", "holdNum"]);
+const controls = () => [...document.querySelectorAll("input[id], select[id], textarea[id]")].filter(el => el.type !== "file" && !SKIP.has(el.id));
+let saveTimer = null, restoring = false;
+function saveState() {
+  if (restoring) return;
+  try {
+    const ctl = {}; controls().forEach(el => ctl[el.id] = el.type === "checkbox" ? el.checked : el.value);
+    const ns = {}; NONCTRL.forEach(k => ns[k] = S[k]);
+    localStorage.setItem(STATE_KEY, JSON.stringify({ v: 1, controls: ctl, S: ns }));
+  } catch (e) {}
+}
+const scheduleSave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 350); };
+["input", "change", "click"].forEach(ev => document.addEventListener(ev, scheduleSave, true));
+window.addEventListener("pagehide", saveState);
+function restoreState() {
+  let st = null;
+  try { st = JSON.parse(localStorage.getItem(STATE_KEY) || "null"); } catch (e) {}
+  if (!st || st.v !== 1) return false;
+  restoring = true;
+  try {
+    NONCTRL.forEach(k => { if (k in (st.S || {})) S[k] = st.S[k]; });
+    const ctl = st.controls || {};
+    controls().forEach(el => {
+      if (!(el.id in ctl)) return;
+      if (el.type === "checkbox") { el.checked = !!ctl[el.id]; el.dispatchEvent(new Event("change")); }
+      else { el.value = ctl[el.id]; el.dispatchEvent(new Event("input")); if (el.tagName === "SELECT") el.dispatchEvent(new Event("change")); }
+    });
+    $("tsNum").value = S.ts; $("holdNum").value = S.hold.toFixed(1);
+    document.querySelectorAll(".look").forEach(b => { const on = b.dataset.look === S.look; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    $("whiteBox").checked = S.look === "white"; if (S.look !== "white") lastDarkLook = S.look;
+    document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", (b.dataset.m === "multi") === S.multi));
+    $("promptTitle").textContent = S.multi ? "Your script" : "Your prompt"; $("multiHint").hidden = !S.multi;
+  } finally { restoring = false; }
+  return true;
+}
+
+/* ---------------- start ---------------- */
+if (IN_VIEWER) {
+  $("exportWav").hidden = true;
+  const p = document.createElement("p"); p.className = "vnote wide";
+  p.textContent = "This web link can't reach ElevenLabs or Inworld directly. Use the downloaded Prompt Studio file to generate voices, or pick Upload a recording.";
+  $("voiceBody").querySelector(".vgrid").prepend(p);
+}
+{ const m = store.get("vModel"); if (m && [...$("vModel").options].some(o => o.value === m)) $("vModel").value = m; }
+restoreState();
+syncGlowUI(); syncGlowSections(); syncTimingUI();
+syncClips(); loadMedia();
+const FONT_LOADS = Object.values(FONTS).flatMap(f => [`${f.w} 24px ${f.fam}`, `${f.bold} 24px ${f.fam}`]);
+(document.fonts ? Promise.allSettled(FONT_LOADS.map(f => document.fonts.load(f))) : Promise.resolve()).then(() => { idleFrame(); renderThumbs(); });
+buildFontGrid();
+</script>
+</body>
+</html>
