@@ -451,14 +451,11 @@ canvas#cv{display:block;width:100%;height:auto;aspect-ratio:16/9}
         <div class="numrow" id="typeTimeRow"><span>Typing time</span><input type="number" id="typeTime" min="0.3" max="20" step="0.1" placeholder="auto"><span class="u">s</span></div>
         <label class="srow" id="cpsRow"><span>Auto speed</span><input type="range" id="cps" min="6" max="40" value="18"><span class="val" id="vCps">18/s</span></label>
         <div class="hr"></div>
-        <div class="numrow"><span>Pause before Send</span><input type="number" id="holdNum" min="0" max="3" step="0.1" value="0.3"><span class="u">s</span></div>
-        <input type="range" id="hold" min="0" max="30" value="3" aria-label="Pause before Send">
+        <div class="numrow"><span>Pause before Send</span><input type="number" id="holdNum" min="0" max="3" step="0.1" value="0.0"><span class="u">s</span></div>
+        <input type="range" id="hold" min="0" max="30" value="0" aria-label="Pause before Send">
         <label class="srow"><span>Voice lead</span><input type="range" id="leadMs" min="-200" max="300" step="10" value="60"><span class="val" id="vLead">60 ms</span></label>
         <div class="hr"></div>
         <div class="row-t"><span>Press Send at the end</span><input type="checkbox" id="sendPress" checked></div>
-        <div class="subopts" id="sendOpts">
-          <div class="row-t"><span>Mouse cursor clicks it</span><input type="checkbox" id="cursor" checked></div>
-        </div>
         <div class="row-t"><span>Fade out at the end</span><input type="checkbox" id="fadeOut"></div>
         <button class="reset wide" data-reset="timing"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg> Reset timing</button>
       </div>
@@ -496,7 +493,7 @@ const S = {
   showTab: true, showLogo: true, tabName: "ForgeGUI", model: "Claude Opus 5.5", logo: null,
   placeholder: true, phText: "What do you want to create?",
   multi: false, voiceOn: false, sync: true, reveal: "letter", voiceVol: .85, speed: 1,
-  idle: false, natural: true, typeTime: 0, cps: 18, leadMs: 60, hold: .3, sendPress: true, cursor: true, fadeOut: false,
+  idle: false, natural: true, typeTime: 0, cps: 18, leadMs: 60, hold: 0, sendPress: true, fadeOut: false,
   clicks: true, keyMode: "click", clickVol: .25, sfx: "mouse", sfxVol: .7, fmt: "alpha", quality: "hi",
 };
 const IMGS = [];   // attached images shown in the box: {img, url}
@@ -585,7 +582,7 @@ let cur = 0;
 
 
 /* ---------------- timeline ---------------- */
-const INTRO = 0.35, LEAD = 0.25, IDLE = 1.2, SEND = 0.35, OUTRO = 0.35, CURSOR_IN = 0.6, TAIL = 0.45;
+const INTRO = 0.35, LEAD = 0.25, IDLE = 1.2, SEND = 0.45, OUTRO = 0.35, TAIL = 0.25;
 const rand = (i, n) => { const v = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453; return v - Math.floor(v); };
 function charTimes(clip) {
   const text = clip.text, n = text.length;
@@ -623,10 +620,8 @@ function timeline(clip) {
   const typeEnd = times.length ? times[times.length - 1] + 0.05 : 0;
   const voiceEnd = S.voiceOn && clip.audio ? clip.audio.duration : 0;
   const t0 = INTRO + (S.idle ? IDLE : LEAD);
-  const bodyEnd = t0 + Math.max(typeEnd, voiceEnd);
-  const useCursor = S.sendPress && S.cursor;
-  const sendAt = bodyEnd + (useCursor ? Math.max(CURSOR_IN + .05, S.hold) : S.hold);
-  const total = sendAt + (S.sendPress ? SEND : 0) + TAIL + (S.fadeOut ? OUTRO : 0);
+  const sendAt = t0 + typeEnd + S.hold;
+  const total = Math.max(sendAt + (S.sendPress ? SEND : 0) + TAIL, t0 + voiceEnd + .25) + (S.fadeOut ? OUTRO : 0);
   return { times, t0, typeEnd: t0 + typeEnd, sendAt, total };
 }
 
@@ -774,9 +769,15 @@ function draw(clip, t) {
 
   const sendX = x + w - 70, midY = by + bs / 2;
   const press = S.sendPress && t >= tl.sendAt ? Math.min(1, (t - tl.sendAt) / SEND) : 0;
-  const bump = press > 0 ? Math.sin(press * Math.PI) : 0;
-  ctx.save(); ctx.translate(sendX, midY); ctx.scale(1 - .18 * bump, 1 - .18 * bump);
-  if (bump > 0) { ctx.fillStyle = P.send; ctx.globalAlpha = a * .2 * bump; ctx.beginPath(); ctx.arc(0, 0, 58, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = a; }
+  const squash = press > 0 ? Math.sin(Math.min(1, press / .3) * Math.PI) : 0;          // quick press
+  const fly = press > .2 ? Math.pow((press - .2) / .8, 2) : 0;                          // then shoots forward
+  if (press > 0 && press < 1) {
+    const q = Math.min(1, press / .7);
+    ctx.save(); ctx.globalAlpha = a * .55 * (1 - q); ctx.strokeStyle = P.send; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(sendX, midY, 30 + q * 70, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+  }
+  ctx.save(); ctx.translate(sendX + fly * 150, midY - fly * 26); ctx.scale(1 - .2 * squash, 1 - .2 * squash);
+  ctx.globalAlpha = a * (1 - fly);
   iconGlow(); ctx.fillStyle = P.send; ctx.beginPath();
   ctx.moveTo(-26, -24); ctx.lineTo(30, 0); ctx.lineTo(-26, 24); ctx.lineTo(-17, 0); ctx.closePath(); ctx.fill();
   ctx.restore();
@@ -789,7 +790,6 @@ function draw(clip, t) {
   ctx.moveTo(chevX - 14, midY - 7); ctx.lineTo(chevX, midY + 7); ctx.lineTo(chevX + 14, midY - 7); ctx.stroke();
 
   if (P.deco) P.deco(B, t);
-  if (S.sendPress && S.cursor) drawCursor(sendX, midY, t, tl);
   ctx.restore();
 }
 /* ---------- glow colours ---------- */
@@ -839,27 +839,6 @@ function glowHalo(path, G) {
       ctx.strokeStyle = G.style; ctx.stroke(); ctx.restore();
     }
   });
-}
-function drawCursor(tx, ty, t, tl) {
-  const start = tl.sendAt - CURSOR_IN;
-  if (t < start) return;
-  const k = Math.min(1, (t - start) / (CURSOR_IN - .05)), e = 1 - Math.pow(1 - k, 3);
-  const fx = tx + 330, fy = ty + 300, px = fx + (tx + 4 - fx) * e, py = fy + (ty + 6 - fy) * e;
-  const fade = Math.min(1, (t - start) / .15);
-  const down = t >= tl.sendAt && t < tl.sendAt + .14, s = down ? .86 : 1;
-  // click ripple
-  if (t >= tl.sendAt && t < tl.sendAt + .45) {
-    const q = (t - tl.sendAt) / .45;
-    ctx.save(); ctx.globalAlpha *= (1 - q) * .8; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.arc(px, py, 18 + q * 70, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-  }
-  ctx.save(); ctx.globalAlpha *= fade; ctx.translate(px, py); ctx.scale(1.55 * s, 1.55 * s);
-  ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 10 * BK; ctx.shadowOffsetY = 4 * BK;
-  ctx.beginPath();  // classic arrow pointer, tip at 0,0
-  ctx.moveTo(0, 0); ctx.lineTo(0, 46); ctx.lineTo(11, 35); ctx.lineTo(19, 53); ctx.lineTo(27, 49); ctx.lineTo(19, 32); ctx.lineTo(34, 32); ctx.closePath();
-  ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
-  ctx.lineJoin = "round"; ctx.lineWidth = 3.2; ctx.strokeStyle = "#111111"; ctx.stroke();
-  ctx.restore();
 }
 
 /* ---------------- look thumbnails ---------------- */
@@ -956,7 +935,7 @@ async function renderWav(clip) {
 
 /* ---------------- preview playback ---------------- */
 let playing = null;
-function restT(c) { const tl = timeline(c); return Math.min(tl.typeEnd + .2, tl.sendAt - (S.sendPress && S.cursor ? CURSOR_IN + .02 : .01)); }
+function restT(c) { const tl = timeline(c); return Math.max(tl.t0, tl.sendAt - .02); }
 function idleFrame() {
   const c = clips[cur]; if (!c) { ctx.clearRect(0, 0, W, H); return; }
   const tl = timeline(c); draw(c, restT(c));
@@ -1242,13 +1221,12 @@ function syncTimingUI() {
   const synced = S.voiceOn && S.sync && clips[cur] && clips[cur].audio;
   $("typeTimeRow").classList.toggle("dis", !!synced); $("typeTime").disabled = !!synced;
   $("cpsRow").hidden = S.typeTime > 0;
-  $("sendOpts").classList.toggle("off", !S.sendPress);
 }
 // selects and text fields
 [["bgMode", "bg"], ["tabName", "tabName"], ["caretPick", "caret"], ["phText", "phText"], ["keyMode", "keyMode"], ["sfx", "sfx"], ["reveal", "reveal"], ["fmt", "fmt"], ["quality", "quality"]].forEach(([id, key]) =>
   $(id).addEventListener("input", () => { S[key] = $(id).value; renderClipList(); idleFrame(); }));
 // toggles
-["sendPress", "cursor", "fadeOut", "clicks", "showTab", "showLogo", "placeholder", "idle", "natural", "sync"].forEach(id =>
+["sendPress", "fadeOut", "clicks", "showTab", "showLogo", "placeholder", "idle", "natural", "sync"].forEach(id =>
   $(id).addEventListener("change", () => {
     S[id] = $(id).checked;
     $("phWrap").hidden = !S.placeholder; $("tabWrap").hidden = !S.showTab; $("logoDrop").hidden = !S.showLogo;
@@ -1457,7 +1435,7 @@ $("whiteBox").addEventListener("change", () => pickLook($("whiteBox").checked ? 
 
 const RESETS = {
   shape: ["bgMode", "round", "bw", "bh"],
-  timing: ["idle", "natural", "typeTime", "cps", "holdNum", "leadMs", "sendPress", "cursor", "fadeOut"],
+  timing: ["idle", "natural", "typeTime", "cps", "holdNum", "leadMs", "sendPress", "fadeOut"],
   sound: ["clicks", "keyMode", "clickVol", "sfx", "sfxVol"],
   style: ["placeholder", "phText", "showTab", "tabName", "showLogo", "tsNum"],
 };
@@ -1564,6 +1542,7 @@ function restoreState() {
     const ctl = st.controls || {};
     controls().forEach(el => {
       if (!(el.id in ctl)) return;
+      if (el.id === "hold" && ctl.hold === "3") return; // old default pause; new default sends right away
       if (el.type === "checkbox") { el.checked = !!ctl[el.id]; el.dispatchEvent(new Event("change")); }
       else { el.value = ctl[el.id]; el.dispatchEvent(new Event("input")); if (el.tagName === "SELECT") el.dispatchEvent(new Event("change")); }
     });
