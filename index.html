@@ -582,7 +582,7 @@ let cur = 0;
 
 
 /* ---------------- timeline ---------------- */
-const INTRO = 0.35, LEAD = 0.25, IDLE = 1.2, SEND = 0.45, OUTRO = 0.35, TAIL = 0.25;
+const INTRO = 0.35, LEAD = 0.25, IDLE = 1.2, SEND = 0.3, OUTRO = 0.35, TAIL = 0.9;
 const rand = (i, n) => { const v = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453; return v - Math.floor(v); };
 function charTimes(clip) {
   const text = clip.text, n = text.length;
@@ -769,15 +769,18 @@ function draw(clip, t) {
 
   const sendX = x + w - 70, midY = by + bs / 2;
   const press = S.sendPress && t >= tl.sendAt ? Math.min(1, (t - tl.sendAt) / SEND) : 0;
-  const squash = press > 0 ? Math.sin(Math.min(1, press / .3) * Math.PI) : 0;          // quick press
-  const fly = press > .2 ? Math.pow((press - .2) / .8, 2) : 0;                          // then shoots forward
-  if (press > 0 && press < 1) {
-    const q = Math.min(1, press / .7);
-    ctx.save(); ctx.globalAlpha = a * .55 * (1 - q); ctx.strokeStyle = P.send; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.arc(sendX, midY, 30 + q * 70, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+  // press the button, then it turns into a spinning loader until the clip ends
+  const squash = press > 0 ? Math.sin(Math.min(1, press / .6) * Math.PI) : 0;
+  const spin = S.sendPress && t >= tl.sendAt ? Math.min(1, (t - tl.sendAt) / .2) : 0;
+  if (spin > 0) {
+    ctx.save(); ctx.globalAlpha = a * spin; ctx.lineCap = "round"; iconGlow();
+    ctx.strokeStyle = P.btnLine; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(sendX, midY, 26, 0, Math.PI * 2); ctx.stroke();
+    const rot = (t - tl.sendAt) * 7.5;
+    ctx.strokeStyle = P.send; ctx.beginPath(); ctx.arc(sendX, midY, 26, rot, rot + Math.PI * 1.35); ctx.stroke();
+    ctx.restore();
   }
-  ctx.save(); ctx.translate(sendX + fly * 150, midY - fly * 26); ctx.scale(1 - .2 * squash, 1 - .2 * squash);
-  ctx.globalAlpha = a * (1 - fly);
+  ctx.save(); ctx.translate(sendX, midY); ctx.scale(1 - .22 * squash, 1 - .22 * squash);
+  ctx.globalAlpha = a * (1 - spin);
   iconGlow(); ctx.fillStyle = P.send; ctx.beginPath();
   ctx.moveTo(-26, -24); ctx.lineTo(30, 0); ctx.lineTo(-26, 24); ctx.lineTo(-17, 0); ctx.closePath(); ctx.fill();
   ctx.restore();
