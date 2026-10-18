@@ -465,6 +465,8 @@ canvas#cv{display:block;width:100%;height:auto;aspect-ratio:16/9}
         <label class="srow"><span>Voice lead</span><input type="range" id="leadMs" min="-200" max="300" step="10" value="60"><span class="val" id="vLead">60 ms</span></label>
         <div class="hr"></div>
         <div class="row-t"><span>Press Send at the end</span><input type="checkbox" id="sendPress" checked></div>
+        <div class="numrow"><span>End after Send</span><input type="number" id="afterNum" min="0.1" max="3" step="0.05" value="0.35"><span class="u">s</span></div>
+        <input type="range" id="after" min="2" max="60" value="7" aria-label="End after Send">
         <div class="row-t"><span>Fade out at the end</span><input type="checkbox" id="fadeOut"></div>
         <button class="reset wide" data-reset="timing"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg> Reset timing</button>
       </div>
@@ -526,7 +528,7 @@ const S = {
   showTab: true, showLogo: true, tabName: "ForgeGUI", model: "Claude Opus 5.5", logo: null,
   placeholder: true, phText: "What do you want to create?",
   multi: false, voiceOn: false, sync: true, reveal: "letter", voiceVol: .85, speed: 1,
-  idle: false, natural: true, typeTime: 0, cps: 18, leadMs: 60, hold: 0, sendPress: true, fadeOut: false,
+  idle: false, natural: true, typeTime: 0, cps: 18, leadMs: 60, hold: 0, after: .35, sendPress: true, fadeOut: false,
   clicks: true, keyMode: "real", clickVol: .6, sfx: "mouse", sfxVol: .8, fmt: "alpha", quality: "hi",
 };
 const IMGS = [];   // attached images shown in the box: {img, url}
@@ -615,7 +617,7 @@ let cur = 0;
 
 
 /* ---------------- timeline ---------------- */
-const INTRO = 0.35, LEAD = 0.25, IDLE = 1.2, SEND = 0.3, OUTRO = 0.35, TAIL = 0.9;
+const INTRO = 0.35, LEAD = 0.25, IDLE = 1.2, SEND = 0.22;
 const rand = (i, n) => { const v = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453; return v - Math.floor(v); };
 function charTimes(clip) {
   const text = clip.text, n = text.length;
@@ -654,7 +656,7 @@ function timeline(clip) {
   const voiceEnd = S.voiceOn && clip.audio ? clip.audio.duration : 0;
   const t0 = INTRO + (S.idle ? IDLE : LEAD);
   const sendAt = t0 + typeEnd + S.hold;
-  const total = Math.max(sendAt + (S.sendPress ? SEND : 0) + TAIL, t0 + voiceEnd + .25) + (S.fadeOut ? OUTRO : 0);
+  const total = Math.max(sendAt + (S.sendPress ? SEND : 0) + S.after, t0 + voiceEnd + .2);
   return { times, t0, typeEnd: t0 + typeEnd, sendAt, total };
 }
 
@@ -707,7 +709,7 @@ function draw(clip, t) {
 
   let a = 1, sc = 1;
   if (t < INTRO) { const k = Math.max(0, t / INTRO), e = 1 - Math.pow(1 - k, 3); a = e; sc = .94 + .06 * e; }
-  if (S.fadeOut) { const fs = tl.total - OUTRO; if (t > fs) { const k = Math.min(1, (t - fs) / OUTRO); a *= 1 - k; sc *= 1 - .03 * k; } }
+  if (S.fadeOut) { const fd = Math.max(.15, tl.total - tl.sendAt - (S.sendPress ? SEND * .5 : 0)), fs = tl.total - fd; if (t > fs) { const k = Math.min(1, (t - fs) / fd), e = k * k * (3 - 2 * k); a *= 1 - e; sc *= 1 - .04 * e; } }
   if (a <= 0) return;
 
   const imgH = IMGS.length ? 162 : 0, w = 1500 * S.bw / 100, r = 8 + S.round / 100 * 72, fsTab = S.ts * .62;
@@ -1338,6 +1340,9 @@ $("tsNum").addEventListener("change", () => setTs($("tsNum").value));
 const setHold = v => { v = Math.max(0, Math.min(3, Math.round((+v || 0) * 10) / 10)); S.hold = v; $("hold").value = Math.round(v * 10); $("holdNum").value = v.toFixed(1); renderClipList(); idleFrame(); };
 $("hold").addEventListener("input", () => setHold($("hold").value / 10));
 $("holdNum").addEventListener("change", () => setHold($("holdNum").value));
+const setAfter = v => { v = Math.max(.1, Math.min(3, Math.round((+v || .35) * 20) / 20)); S.after = v; $("after").value = Math.round(v * 20); $("afterNum").value = v.toFixed(2); renderClipList(); idleFrame(); };
+$("after").addEventListener("input", () => setAfter($("after").value / 20));
+$("afterNum").addEventListener("change", () => setAfter($("afterNum").value));
 $("typeTime").addEventListener("input", () => { const v = parseFloat($("typeTime").value); S.typeTime = v > 0 ? Math.min(20, v) : 0; syncTimingUI(); renderClipList(); idleFrame(); });
 function syncTimingUI() {
   const synced = S.voiceOn && S.sync && clips[cur] && clips[cur].audio;
@@ -1573,7 +1578,7 @@ $("whiteBox").addEventListener("change", () => pickLook($("whiteBox").checked ? 
 
 const RESETS = {
   shape: ["bgMode", "round", "bw", "bh"],
-  timing: ["idle", "natural", "typeTime", "cps", "holdNum", "leadMs", "sendPress", "fadeOut"],
+  timing: ["idle", "natural", "typeTime", "cps", "holdNum", "afterNum", "leadMs", "sendPress", "fadeOut"],
   sound: ["clicks", "keyMode", "clickVol", "sfx", "sfxVol"],
   style: ["placeholder", "phText", "showTab", "tabName", "showLogo", "tsNum"],
 };
@@ -1666,7 +1671,7 @@ async function loadMedia() {
 }
 // settings, script and choices: every control's value plus the few choices made with buttons
 const STATE_KEY = "ps_state", NONCTRL = ["look", "effect", "glow", "glow2", "glowMode", "glowAnim", "font", "bold", "multi"];
-const SKIP = new Set(["keyIn", "voiceIdIn", "whiteBox", "hexIn", "hexIn2", "glowColor", "glowColor2", "tsNum", "holdNum"]);
+const SKIP = new Set(["keyIn", "voiceIdIn", "whiteBox", "hexIn", "hexIn2", "glowColor", "glowColor2", "tsNum", "holdNum", "afterNum"]);
 const controls = () => [...document.querySelectorAll("input[id], select[id], textarea[id]")].filter(el => el.type !== "file" && !SKIP.has(el.id));
 let saveTimer = null, restoring = false;
 function saveState() {
@@ -1695,7 +1700,7 @@ function restoreState() {
       if (el.type === "checkbox") { el.checked = !!ctl[el.id]; el.dispatchEvent(new Event("change")); }
       else { el.value = ctl[el.id]; el.dispatchEvent(new Event("input")); if (el.tagName === "SELECT") el.dispatchEvent(new Event("change")); }
     });
-    $("tsNum").value = S.ts; $("holdNum").value = S.hold.toFixed(1);
+    $("tsNum").value = S.ts; $("holdNum").value = S.hold.toFixed(1); $("afterNum").value = S.after.toFixed(2);
     document.querySelectorAll(".look").forEach(b => { const on = b.dataset.look === S.look; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
     $("whiteBox").checked = S.look === "white"; if (S.look !== "white") lastDarkLook = S.look;
     document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", (b.dataset.m === "multi") === S.multi));
