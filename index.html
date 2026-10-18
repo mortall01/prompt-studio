@@ -28,7 +28,10 @@ button{cursor:pointer}
 .brand-mark{width:34px;height:34px;border-radius:10px;background:#f2f4fa;display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .brand-mark svg{width:24px;height:24px}
 .brand b{color:var(--accent);font-weight:700}
-.modebar{margin-left:auto;display:flex;align-items:center;gap:10px}
+.modebar{margin-left:auto;display:flex;align-items:center;gap:10px;min-width:0}
+.topbar{flex-wrap:wrap}
+.brand span{white-space:nowrap}
+@media (max-width:640px){.modebar{margin-left:0;width:100%}.modebar .segs{flex:1;min-width:0}.modebar .segs button{padding:7px 4px;font-size:12px}.topbar{padding:12px 14px}}
 
 /* columns */
 .app{display:grid;grid-template-columns:288px minmax(0,1fr) 306px;gap:18px;padding:18px max(16px,1.6vw) 40px;align-items:start}
@@ -57,12 +60,18 @@ select option,select optgroup{background:#141b2c;color:var(--fg)}
 input:hover,select:hover,textarea:hover{border-color:var(--line-2)}
 input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 input[type=number]{font-family:var(--mono);font-size:13px;text-align:center;padding:0 6px}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;margin:0}
-input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:rgba(255,255,255,.12)}
-input[type=range]::-moz-range-track{height:3px;border-radius:3px;background:rgba(255,255,255,.12)}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#b7bfd0;margin-top:-6.5px;box-shadow:0 1px 4px rgba(0,0,0,.5);transition:transform .12s,background .12s}
-input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:50%;background:#b7bfd0}
-input[type=range]:hover::-webkit-slider-thumb{background:#e3e8f4;transform:scale(1.1)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;margin:0;cursor:pointer;--p:50%;touch-action:pan-y}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(to right,var(--accent) 0,var(--accent) var(--p),rgba(255,255,255,.13) var(--p),rgba(255,255,255,.13) 100%)}
+input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:rgba(255,255,255,.13)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:4px;background:var(--accent)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#f4f6fb;margin-top:-7px;border:0;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.45);transition:transform .12s,box-shadow .12s}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:#f4f6fb;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.45)}
+input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.12)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.18);box-shadow:0 0 0 6px rgba(159,177,255,.22),0 2px 6px rgba(0,0,0,.45)}
+input[type=range]:focus-visible{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(159,177,255,.55)}
+input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 4px rgba(159,177,255,.55)}
+input[type=range]:disabled{opacity:.4;cursor:not-allowed}
 input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:none;width:36px;height:21px;border-radius:99px;background:#2a3246;border:1px solid var(--line);position:relative;cursor:pointer;transition:background .18s,border-color .18s;margin:0}
 input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#b9c0cf;transition:transform .18s,background .18s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
@@ -463,14 +472,14 @@ canvas#cv{display:block;width:100%;height:auto;aspect-ratio:16/9}
       <div class="pane" data-spane="sound" hidden>
         <div class="row-t"><span>Typing sound</span><input type="checkbox" id="clicks" checked></div>
         <label class="f">Sound mode
-          <select id="keyMode"><option value="click">Per-key clicks</option><option value="soft">Soft taps</option><option value="mech">Mechanical keyboard</option></select>
+          <div class="vactions"><select id="keyMode" aria-label="Typing sound"><option value="click">Per-key clicks</option><option value="soft">Soft taps</option><option value="mech">Mechanical keyboard</option></select><button class="btn" id="keyListen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg> Listen</button></div>
         </label>
-        <label class="srow"><span>Key volume</span><input type="range" id="clickVol" min="0" max="100" value="25"><span class="val" id="vCv">25%</span></label>
+        <label class="srow"><span>Key volume</span><input type="range" id="clickVol" min="0" max="100" value="60"><span class="val" id="vCv">60%</span></label>
         <div class="hr"></div>
         <div class="f"><span>Send click SFX</span>
           <div class="vactions"><select id="sfx" aria-label="Send click sound"><option value="mouse">Mouse click</option><option value="pop">Pop</option><option value="tap">Tap</option><option value="ding">Ding</option><option value="none">None</option></select><button class="btn" id="sfxListen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg> Listen</button></div>
         </div>
-        <label class="srow"><span>Click volume</span><input type="range" id="sfxVol" min="0" max="100" value="70"><span class="val" id="vSv">70%</span></label>
+        <label class="srow"><span>Click volume</span><input type="range" id="sfxVol" min="0" max="100" value="80"><span class="val" id="vSv">80%</span></label>
         <button class="reset wide" data-reset="sound"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg> Reset sound</button>
       </div>
     </section>
@@ -494,7 +503,7 @@ const S = {
   placeholder: true, phText: "What do you want to create?",
   multi: false, voiceOn: false, sync: true, reveal: "letter", voiceVol: .85, speed: 1,
   idle: false, natural: true, typeTime: 0, cps: 18, leadMs: 60, hold: 0, sendPress: true, fadeOut: false,
-  clicks: true, keyMode: "click", clickVol: .25, sfx: "mouse", sfxVol: .7, fmt: "alpha", quality: "hi",
+  clicks: true, keyMode: "click", clickVol: .6, sfx: "mouse", sfxVol: .8, fmt: "alpha", quality: "hi",
 };
 const IMGS = [];   // attached images shown in the box: {img, url}
 
@@ -677,7 +686,11 @@ function draw(clip, t) {
   if (S.fadeOut) { const fs = tl.total - OUTRO; if (t > fs) { const k = Math.min(1, (t - fs) / OUTRO); a *= 1 - k; sc *= 1 - .03 * k; } }
   if (a <= 0) return;
 
-  const imgH = IMGS.length ? 150 : 0, w = 1500 * S.bw / 100, h = 520 * S.bh / 100 + imgH, r = 8 + S.round / 100 * 72, fsTab = S.ts * .62;
+  const imgH = IMGS.length ? 162 : 0, w = 1500 * S.bw / 100, r = 8 + S.round / 100 * 72, fsTab = S.ts * .62;
+  ctx.font = fnt(F, S.ts, S.bold); ctx.letterSpacing = S.track * F.k + "px";
+  const nLines = Math.max(1, wrapLines(clip.text || (S.placeholder ? S.phText : "") || " ", w - 124).length);
+  ctx.letterSpacing = "0px";
+  const h = Math.max(520 * S.bh / 100 + imgH, 56 + imgH + nLines * S.ts * F.k * F.lh + 36 + 112 + 50);
   let tab = null;
   if (S.showTab) {
     ctx.font = fnt(F, fsTab); const uw = ctx.measureText("Using ").width;
@@ -699,7 +712,7 @@ function draw(clip, t) {
   if (S.effect === "shadow") { ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 60 * BK; ctx.shadowOffsetY = 18 * BK; }
   ctx.fillStyle = fill; ctx.fill(); ctx.restore();
   if (P.inner) { ctx.save(); path(); ctx.clip(); P.inner(B, t, L); ctx.restore(); }
-  if (S.effect === "glow" && S.innerGlow) {
+  if (S.effect === "glow" && S.innerGlow && FILTER_OK) {
     ctx.save(); path(); ctx.clip(); path(); ctx.filter = `blur(${26 * BK * S.glowSize / 100}px)`;
     ctx.globalAlpha *= Math.min(1, .75 * G.k); ctx.lineWidth = 46 + S.spread * 3; ctx.strokeStyle = G.style; ctx.stroke(); ctx.restore();
   }
@@ -833,7 +846,12 @@ function glowState(t, B) {
   }
   return { style, base, k };
 }
+const FILTER_OK = (() => { try { const c = document.createElement("canvas").getContext("2d"); c.filter = "blur(2px)"; return c.filter === "blur(2px)"; } catch (e) { return false; } })();
 function glowHalo(path, G) {
+  if (!FILTER_OK) { // browsers without canvas blur filters: use a shadow glow instead
+    path(); ctx.save(); ctx.shadowColor = G.base; ctx.shadowBlur = 55 * BK * S.glowSize / 100; ctx.globalAlpha *= Math.min(1, G.k);
+    ctx.lineWidth = 8 + S.spread * 2; ctx.lineJoin = "round"; ctx.strokeStyle = G.style; ctx.stroke(); ctx.restore(); return;
+  }
   const sz = S.glowSize / 100, passes = [[62, 16, .85], [26, 8, 1]], reps = Math.ceil(G.k);
   passes.forEach(([bl, lw, al]) => {
     for (let i = 0; i < reps; i++) {
@@ -886,36 +904,50 @@ function tone(ac, dest, at, f0, f1, dur, gain, type = "sine") {
   const g = ac.createGain(); g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(Math.max(.0002, gain), at + .006); g.gain.exponentialRampToValueAtTime(.0001, at + dur);
   o.connect(g).connect(dest); o.start(at); o.stop(at + dur + .03); return o;
 }
-function keySound(ac, dest, at, vol, mode, bufs) {
-  const j = .8 + Math.random() * .4;
-  if (mode === "soft") return [burst(ac, dest, at, bufs.short, "lowpass", 1500 * j, .7, vol * 1.1)];
-  if (mode === "mech") return [burst(ac, dest, at, bufs.short, "bandpass", 3300 * j, 1.4, vol * 1.05), burst(ac, dest, at + .004, bufs.long, "bandpass", 430 * j, 1.1, vol * 1.5)];
-  return [burst(ac, dest, at, bufs.short, "bandpass", 2400 + Math.random() * 1600, 1.2, vol * (.6 + Math.random() * .4), .8 + Math.random() * .5)];
+// one click = a bright noise transient + a short pitched "body", so it reads clearly on any speaker
+function click(ac, dest, at, gain, o) {
+  const n = burst(ac, dest, at, noiseBuf(ac, o.len || .012, 3), o.ftype || "highpass", o.f || 2000, .7, gain * (o.nGain || 2.4));
+  const t = tone(ac, dest, at, o.body * 1.5, o.body, o.bodyLen || .045, gain * (o.bGain || .5), o.wave || "triangle");
+  return [n, t];
+}
+function keySound(ac, dest, at, vol, mode) {
+  const j = .9 + Math.random() * .2, v = vol * (.85 + Math.random() * .3);
+  if (mode === "soft") return click(ac, dest, at, v * 1.5, { ftype: "lowpass", f: 2200 * j, body: 170 * j, bGain: .7, len: .016 });
+  if (mode === "mech") return [...click(ac, dest, at, v, { f: 1600 * j, body: 115 * j, bGain: 1, len: .02, bodyLen: .06 }),
+    ...click(ac, dest, at + .045, v * .45, { f: 3200 * j, body: 240 * j, bGain: .3, len: .008, bodyLen: .025 })];
+  return click(ac, dest, at, v, { f: 2600 * j, body: 230 * j, bGain: .45 });
 }
 function sendSfx(ac, dest, at, vol, kind) {
-  if (kind === "mouse") return [burst(ac, dest, at, noiseBuf(ac, .014, 9), "bandpass", 3600, 1.8, vol * 1.6), burst(ac, dest, at, noiseBuf(ac, .02, 9), "bandpass", 1300, 1.8, vol * 1.1), burst(ac, dest, at + .08, noiseBuf(ac, .01, 9), "bandpass", 4200, 1.8, vol * .8)];
-  if (kind === "pop") return [tone(ac, dest, at, 720, 170, .12, vol * .9)];
-  if (kind === "tap") return [burst(ac, dest, at, noiseBuf(ac, .03, 5), "lowpass", 900, .8, vol * 1.8), tone(ac, dest, at, 320, 150, .05, vol * .45)];
-  if (kind === "ding") return [tone(ac, dest, at, 1320, 1318, .55, vol * .35, "triangle"), tone(ac, dest, at, 1980, 1978, .4, vol * .14)];
+  if (kind === "mouse") return [...click(ac, dest, at, vol, { f: 2400, body: 1600, bGain: .35, len: .008, bodyLen: .02, wave: "sine" }),
+    ...click(ac, dest, at + .085, vol * .6, { f: 3000, body: 1900, bGain: .25, len: .006, bodyLen: .015, wave: "sine" })];
+  if (kind === "pop") return [tone(ac, dest, at, 950, 190, .14, vol * 1.1)];
+  if (kind === "tap") return [...click(ac, dest, at, vol * 1.1, { ftype: "lowpass", f: 1400, body: 320, bGain: 1, len: .02, bodyLen: .07, wave: "sine" })];
+  if (kind === "ding") return [tone(ac, dest, at, 1320, 1318, .6, vol * .7, "triangle"), tone(ac, dest, at, 1980, 1978, .45, vol * .3)];
   return [];
 }
+// effects go through a gentle compressor so short clicks come out loud and even
+function fxBus(ac, dest) {
+  const comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -18; comp.knee.value = 6; comp.ratio.value = 8; comp.attack.value = .001; comp.release.value = .08;
+  const make = ac.createGain(); make.gain.value = .95;
+  comp.connect(make).connect(dest); return comp;
+}
 function scheduleAudio(ac, dest, clip, start) {
-  const tl = timeline(clip), nodes = [];
+  const tl = timeline(clip), nodes = [], fx = fxBus(ac, dest);
   if (S.voiceOn && clip.audio) {
     const src = ac.createBufferSource(); src.buffer = clip.audio;
     const g = ac.createGain(); g.gain.value = S.voiceVol; src.connect(g).connect(dest);
     src.start(start + tl.t0); nodes.push(src);
   }
   if (S.clicks && S.clickVol > 0) {
-    const bufs = { short: noiseBuf(ac, .03, 6), long: noiseBuf(ac, .05, 4) };
     let lastT = -1;
     [...clip.text].forEach((ch, i) => {
       if (/\s/.test(ch)) return;
       const tt = tl.times[i]; if (tt === lastT) return; lastT = tt;
-      nodes.push(...keySound(ac, dest, start + tl.t0 + tt, S.clickVol, S.keyMode, bufs));
+      nodes.push(...keySound(ac, fx, start + tl.t0 + tt, S.clickVol, S.keyMode));
     });
   }
-  if (S.sendPress && S.sfx !== "none" && S.sfxVol > 0) nodes.push(...sendSfx(ac, dest, start + tl.sendAt + .01, S.sfxVol, S.sfx));
+  if (S.sendPress && S.sfx !== "none" && S.sfxVol > 0) nodes.push(...sendSfx(ac, fx, start + tl.sendAt + .01, S.sfxVol, S.sfx));
   return nodes;
 }
 function stopNodes(nodes) { nodes.forEach(n => { try { n.stop(); } catch (e) {} }); }
@@ -940,6 +972,8 @@ async function renderWav(clip) {
 let playing = null;
 function restT(c) { const tl = timeline(c); return Math.max(tl.t0, tl.sendAt - .02); }
 function idleFrame() {
+  paintRanges();
+  if (playing || busy) { updateMeta(); return; }
   const c = clips[cur]; if (!c) { ctx.clearRect(0, 0, W, H); return; }
   const tl = timeline(c); draw(c, restT(c));
   $("clipInfo").textContent = `16:9 / ${tl.total.toFixed(1)} s`;
@@ -948,8 +982,8 @@ function idleFrame() {
 function play() {
   if (playing) return stop();
   const c = clips[cur]; if (!c) return;
-  const ac = AC(); ac.resume();
-  const start = ac.currentTime + .05, nodes = scheduleAudio(ac, ac.destination, c, start), tl = timeline(c);
+  const ac = AC(); if (ac.state !== "running") ac.resume();
+  const start = ac.currentTime + .08, nodes = scheduleAudio(ac, ac.destination, c, start), tl = timeline(c);
   playing = { nodes }; $("playBtn").lastChild.textContent = " Stop";
   const loop = () => {
     if (!playing) return;
@@ -1020,7 +1054,8 @@ async function recordClip(i) {
   await download(new Blob(chunks, { type: mime.split(";")[0] }), slug(c.text, i) + (S.fmt === "green" ? "-green" : "") + "." + ext);
 }
 async function runExport() {
-  if (busy || !clips.length) return; stop(); busy = true; setBusy(true);
+  if (busy || !clips.length) return;
+  if (clips.every(c => !c.text.trim())) return setStatus("exStatus", "Type a prompt first.", "err"); stop(); busy = true; setBusy(true);
   try {
     const idx = clips.map((_, i) => i);
     for (const i of idx) { cur = i; renderClipList(); await recordClip(i); }
@@ -1152,7 +1187,7 @@ async function generateVoices() {
   const name = p === "inworld" ? "Inworld" : "ElevenLabs", fn = p === "inworld" ? inworldVoice : elevenVoice;
   try {
     for (let i = 0; i < clips.length; i++) { setStatus("vStatus", clips.length > 1 ? `Generating ${i + 1} of ${clips.length}…` : "Generating…"); await fn(i); }
-    setStatus("vStatus", "Voice ready. Hit Listen or Preview.", "ok"); saveVoices();
+    setStatus("vStatus", "Voice ready. Hit Listen or Preview.", "ok"); saveVoices(); syncTimingUI();
   } catch (e) { setStatus("vStatus", voiceFetchError(e, name), "err"); }
   busy = false; setBusy(false); updateReady(); idleFrame();
 }
@@ -1174,6 +1209,7 @@ function readClips() {
 }
 function syncClips() {
   const texts = readClips(), old = clips;
+  if (!texts.length) texts.push("");
   clips = texts.map(text => old.find(c => c.text === text) || { text, audio: null, times: null, src: null });
   cur = Math.min(cur, Math.max(0, clips.length - 1));
   const n = $("script").value.trim().length;
@@ -1256,7 +1292,12 @@ $("audioFile").addEventListener("change", async e => {
   } catch (err) { setStatus("vStatus", "Couldn't read that audio file. Try MP3 or WAV.", "err"); }
   e.target.value = ""; renderClipList(); syncTimingUI(); idleFrame();
 });
-$("sfxListen").addEventListener("click", () => { const ac = AC(); ac.resume(); sendSfx(ac, ac.destination, ac.currentTime + .02, Math.max(.2, S.sfxVol), S.sfx === "none" ? "mouse" : S.sfx); });
+async function readyAudio() { const ac = AC(); if (ac.state !== "running") { try { await ac.resume(); } catch (e) {} } return ac; }
+$("sfxListen").addEventListener("click", async () => { const ac = await readyAudio(); sendSfx(ac, fxBus(ac, ac.destination), ac.currentTime + .03, Math.max(.3, S.sfxVol), S.sfx === "none" ? "mouse" : S.sfx); });
+$("keyListen").addEventListener("click", async () => {
+  const ac = await readyAudio(), fx = fxBus(ac, ac.destination), t0 = ac.currentTime + .03;
+  [0, .11, .19, .33, .41, .52].forEach(d => keySound(ac, fx, t0 + d, Math.max(.3, S.clickVol), S.keyMode));
+});
 
 // model label
 function syncModel() {
@@ -1470,6 +1511,16 @@ $("resetAll").addEventListener("click", () => {
   $("modelPick").value = "Claude Opus 5.5"; syncModel();
 });
 
+/* ---------------- sliders: filled track, double-click resets ---------------- */
+function paintRange(el) { const mn = +el.min || 0, mx = +el.max || 100; el.style.setProperty("--p", ((el.value - mn) / (mx - mn) * 100).toFixed(2) + "%"); }
+function paintRanges() { document.querySelectorAll('input[type=range]').forEach(paintRange); }
+document.addEventListener("input", e => { if (e.target.matches && e.target.matches('input[type=range]')) paintRange(e.target); }, true);
+document.addEventListener("dblclick", e => {
+  const el = e.target; if (!el.matches || !el.matches('input[type=range]')) return;
+  el.value = el.defaultValue; el.dispatchEvent(new Event("input", { bubbles: true }));
+});
+document.querySelectorAll('input[type=range]').forEach(el => { if (!el.title) el.title = "Drag, or double-click to reset"; });
+
 /* ---------------- saved work (stays in this browser) ---------------- */
 const idb = (() => {
   let p;
@@ -1545,6 +1596,7 @@ function restoreState() {
     const ctl = st.controls || {};
     controls().forEach(el => {
       if (!(el.id in ctl)) return;
+      if ((el.id === "clickVol" && ctl.clickVol === "25") || (el.id === "sfxVol" && ctl.sfxVol === "70")) return; // old quiet defaults
       if (el.id === "hold" && ctl.hold === "3") return; // old default pause; new default sends right away
       if (el.type === "checkbox") { el.checked = !!ctl[el.id]; el.dispatchEvent(new Event("change")); }
       else { el.value = ctl[el.id]; el.dispatchEvent(new Event("input")); if (el.tagName === "SELECT") el.dispatchEvent(new Event("change")); }
