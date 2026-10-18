@@ -472,7 +472,23 @@ canvas#cv{display:block;width:100%;height:auto;aspect-ratio:16/9}
       <div class="pane" data-spane="sound" hidden>
         <div class="row-t"><span>Typing sound</span><input type="checkbox" id="clicks" checked></div>
         <label class="f">Sound mode
-          <div class="vactions"><select id="keyMode" aria-label="Typing sound"><option value="click">Per-key clicks</option><option value="soft">Soft taps</option><option value="mech">Mechanical keyboard</option></select><button class="btn" id="keyListen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg> Listen</button></div>
+          <div class="vactions"><select id="keyMode" aria-label="Typing sound">
+            <optgroup label="Keyboards">
+              <option value="click">Per-key clicks</option>
+              <option value="laptop">Laptop keys</option>
+              <option value="soft">Soft taps</option>
+              <option value="membrane">Office keyboard</option>
+              <option value="mech">Mechanical keyboard</option>
+              <option value="thocky">Thocky (deep mechanical)</option>
+              <option value="clicky">Clicky (blue switches)</option>
+              <option value="phone">Phone keyboard</option>
+              <option value="typewriter">Typewriter</option>
+            </optgroup>
+            <optgroup label="Fun">
+              <option value="retro">Retro 8-bit blips</option>
+              <option value="bubble">Bubble pops</option>
+            </optgroup>
+          </select><button class="btn" id="keyListen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg> Listen</button></div>
         </label>
         <label class="srow"><span>Key volume</span><input type="range" id="clickVol" min="0" max="100" value="60"><span class="val" id="vCv">60%</span></label>
         <div class="hr"></div>
@@ -910,12 +926,26 @@ function click(ac, dest, at, gain, o) {
   const t = tone(ac, dest, at, o.body * 1.5, o.body, o.bodyLen || .045, gain * (o.bGain || .5), o.wave || "triangle");
   return [n, t];
 }
-function keySound(ac, dest, at, vol, mode) {
-  const j = .9 + Math.random() * .2, v = vol * (.85 + Math.random() * .3);
-  if (mode === "soft") return click(ac, dest, at, v * 1.5, { ftype: "lowpass", f: 2200 * j, body: 170 * j, bGain: .7, len: .016 });
-  if (mode === "mech") return [...click(ac, dest, at, v, { f: 1600 * j, body: 115 * j, bGain: 1, len: .02, bodyLen: .06 }),
-    ...click(ac, dest, at + .045, v * .45, { f: 3200 * j, body: 240 * j, bGain: .3, len: .008, bodyLen: .025 })];
-  return click(ac, dest, at, v, { f: 2600 * j, body: 230 * j, bGain: .45 });
+// typing sounds. `space` is true for the space bar, which some keyboards play as a deeper thump
+const SPACE_THUMP = new Set(["mech", "thocky", "typewriter", "membrane", "clicky"]);
+function keySound(ac, dest, at, vol, mode, space = false) {
+  const j = .9 + Math.random() * .2, v = vol * (.85 + Math.random() * .3), sp = space ? .8 : 1;
+  switch (mode) {
+    case "soft": return click(ac, dest, at, v * 1.5, { ftype: "lowpass", f: 2200 * j, body: 170 * j, bGain: .7, len: .016 });
+    case "mech": return [...click(ac, dest, at, v, { f: 1600 * j * sp, body: 115 * j * sp, bGain: space ? 1.3 : 1, len: .02, bodyLen: space ? .08 : .06 }),
+      ...click(ac, dest, at + .045, v * .45, { f: 3200 * j, body: 240 * j, bGain: .3, len: .008, bodyLen: .025 })];
+    case "thocky": return click(ac, dest, at, v * 1.25, { ftype: "lowpass", f: 1000 * j * sp, body: 88 * j * sp, bGain: 1.35, len: .03, bodyLen: space ? .1 : .075, wave: "sine" });
+    case "clicky": return [...click(ac, dest, at, v * .72, { f: 3800 * j, body: 2600 * j, bGain: .25, len: .005, bodyLen: .012, wave: "sine" }),
+      ...click(ac, dest, at + .014, v * .65, { f: 3000 * j, body: 200 * j * sp, bGain: .6, len: .012, bodyLen: .04 })];
+    case "laptop": return click(ac, dest, at, v * 1.1, { ftype: "bandpass", f: 3600 * j, body: 330 * j, bGain: .3, len: .008, bodyLen: .025, nGain: 3.2 });
+    case "membrane": return click(ac, dest, at, v * 1.4, { ftype: "lowpass", f: 1300 * j * sp, body: 150 * j * sp, bGain: .9, len: .03, bodyLen: .06 });
+    case "phone": return [...click(ac, dest, at, v * 1.1, { f: 4500, body: 1550 * j, bGain: .5, len: .004, bodyLen: .012, wave: "sine", nGain: 2 })];
+    case "typewriter": return [...click(ac, dest, at, v * 1.25, { ftype: "bandpass", f: 1900 * j * sp, body: 135 * j * sp, bGain: 1.1, len: .025, bodyLen: .07, nGain: 3 }),
+      tone(ac, dest, at + .004, 2600 * j, 2550 * j, .05, v * .12, "triangle")];
+    case "retro": { const f = [523, 587, 659, 784, 880, 988][Math.floor(Math.random() * 6)]; return [tone(ac, dest, at, f, f * .98, .05, v * 1.1, "square")]; }
+    case "bubble": return [tone(ac, dest, at, 280 * j, 900 * j, .07, v * 1.45, "sine")];
+    default: return click(ac, dest, at, v, { f: 2600 * j, body: 230 * j, bGain: .45 });
+  }
 }
 function sendSfx(ac, dest, at, vol, kind) {
   if (kind === "mouse") return [...click(ac, dest, at, vol, { f: 2400, body: 1600, bGain: .35, len: .008, bodyLen: .02, wave: "sine" }),
@@ -941,10 +971,12 @@ function scheduleAudio(ac, dest, clip, start) {
   }
   if (S.clicks && S.clickVol > 0) {
     let lastT = -1;
+    const thump = SPACE_THUMP.has(S.keyMode) && S.reveal !== "word";
     [...clip.text].forEach((ch, i) => {
-      if (/\s/.test(ch)) return;
+      const space = ch === " ";
+      if (/\s/.test(ch) && !(space && thump)) return;
       const tt = tl.times[i]; if (tt === lastT) return; lastT = tt;
-      nodes.push(...keySound(ac, fx, start + tl.t0 + tt, S.clickVol, S.keyMode));
+      nodes.push(...keySound(ac, fx, start + tl.t0 + tt, S.clickVol, S.keyMode, space));
     });
   }
   if (S.sendPress && S.sfx !== "none" && S.sfxVol > 0) nodes.push(...sendSfx(ac, fx, start + tl.sendAt + .01, S.sfxVol, S.sfx));
@@ -1296,7 +1328,7 @@ async function readyAudio() { const ac = AC(); if (ac.state !== "running") { try
 $("sfxListen").addEventListener("click", async () => { const ac = await readyAudio(); sendSfx(ac, fxBus(ac, ac.destination), ac.currentTime + .03, Math.max(.3, S.sfxVol), S.sfx === "none" ? "mouse" : S.sfx); });
 $("keyListen").addEventListener("click", async () => {
   const ac = await readyAudio(), fx = fxBus(ac, ac.destination), t0 = ac.currentTime + .03;
-  [0, .11, .19, .33, .41, .52].forEach(d => keySound(ac, fx, t0 + d, Math.max(.3, S.clickVol), S.keyMode));
+  [0, .11, .19, .33, .41, .52, .64, .72].forEach((d, i) => keySound(ac, fx, t0 + d, Math.max(.3, S.clickVol), S.keyMode, i === 3 && SPACE_THUMP.has(S.keyMode)));
 });
 
 // model label
