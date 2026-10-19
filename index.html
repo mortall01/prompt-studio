@@ -343,7 +343,7 @@ canvas#cv{display:block;width:100%;height:auto;aspect-ratio:16/9}
 
     <section class="card" id="voiceCard">
       <div class="card-h"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg> Voiceover <span class="pill" id="vCurrent" hidden></span><span class="sp"></span><input type="checkbox" id="voiceOn" aria-label="Voiceover on"></div>
-      <p class="muted" id="voiceOff">Add narration with ElevenLabs or Inworld, typed in sync with every letter.</p>
+      <p class="muted" id="voiceOff">Add narration with ElevenLabs, Inworld or Fish Audio, typed in sync with every word.</p>
       <div id="voiceBody" hidden>
         <div class="vgrid">
           <label class="f">Voice model
@@ -356,6 +356,12 @@ canvas#cv{display:block;width:100%;height:auto;aspect-ratio:16/9}
               <optgroup label="Inworld">
                 <option value="inworld-tts-2">Inworld TTS 2</option>
                 <option value="inworld-tts-2-flash">Inworld TTS 2 Flash</option>
+              </optgroup>
+              <optgroup label="Fish Audio">
+                <option value="fish:s2.1-pro">Fish Audio S2.1 Pro</option>
+                <option value="fish:s2.1-pro-free">Fish Audio S2.1 Pro Free</option>
+                <option value="fish:s2-pro">Fish Audio S2 Pro</option>
+                <option value="fish:drama-3">Fish Audio Drama 3</option>
               </optgroup>
               <optgroup label="Your own audio">
                 <option value="upload">Upload a recording</option>
@@ -1193,7 +1199,8 @@ function spreadTimes(text, s, e) {
 
 
 /* ---------------- voiceover ---------------- */
-const provOf = m => m === "upload" ? "upload" : m.startsWith("inworld") ? "inworld" : "eleven";
+const provOf = m => m === "upload" ? "upload" : m.startsWith("inworld") ? "inworld" : m.startsWith("fish:") ? "fish" : "eleven";
+const PROV_NAME = { eleven: "ElevenLabs", inworld: "Inworld", fish: "Fish Audio" };
 const store = {
   get(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
@@ -1202,14 +1209,15 @@ function syncVoiceUI() {
   const m = $("vModel").value, p = provOf(m);
   document.querySelectorAll("#voiceBody .api").forEach(el => el.hidden = p === "upload");
   document.querySelectorAll("#voiceBody .upl").forEach(el => el.hidden = p !== "upload");
-  $("keyLabel").textContent = p === "inworld" ? "Inworld API key" : "ElevenLabs API key";
-  $("keyIn").placeholder = p === "inworld" ? "Basic (Base64) key" : "sk_…";
-  $("voiceIdIn").placeholder = p === "inworld" ? "e.g. Ashley" : "Paste your ElevenLabs voice ID";
+  $("keyLabel").textContent = (PROV_NAME[p] || "") + " API key";
+  $("keyIn").placeholder = p === "inworld" ? "Basic (Base64) key" : p === "fish" ? "Paste your Fish Audio API key" : "sk_…";
+  $("voiceIdIn").placeholder = p === "inworld" ? "e.g. Ashley" : p === "fish" ? "Voice model ID from fish.audio" : "Paste your ElevenLabs voice ID";
   if (p !== "upload") { $("keyIn").value = store.get("key_" + p); $("voiceIdIn").value = store.get("vid_" + p); }
   $("genLabel").textContent = p === "upload" ? "Choose audio file" : (clips.length > 1 ? "Generate voice for all clips" : "Generate voice");
   $("vFoot").textContent = p === "upload"
     ? "Typing is spread across the speech found in your file. Close, but ElevenLabs and Inworld sync letter by letter."
-    : `API keys and voice IDs save separately per provider, in this browser only. Generating uses your ${p === "inworld" ? "Inworld" : "ElevenLabs"} credits.`;
+    : p === "fish" ? "Fish Audio syncs typing word by word. Find a voice ID on fish.audio: open a voice and copy the ID from its page address. Generating uses your Fish Audio credits."
+    : `API keys and voice IDs save separately per provider, in this browser only. Generating uses your ${PROV_NAME[p]} credits.`;
   updateReady();
 }
 function updateReady() {
@@ -1220,7 +1228,7 @@ function updateReady() {
   $("vCurrent").textContent = c ? `clip ${String(cur + 1).padStart(2, "0")} · ${c.audio ? c.src : "no voice"}` : "";
 }
 const voiceFetchError = (e, name) => e instanceof TypeError
-  ? (IN_VIEWER ? `This web link can't reach ${name}. Use the downloaded Prompt Studio file for voices.` : `Couldn't reach ${name}. Check your connection.`)
+  ? (name === "Fish Audio" && !IN_VIEWER ? "Couldn't reach Fish Audio. If your connection is fine, Fish Audio may be blocking requests from websites: make the voice on fish.audio, download it, and use Upload a recording." : IN_VIEWER ? `This web link can't reach ${name}. Use the downloaded Prompt Studio file for voices.` : `Couldn't reach ${name}. Check your connection.`)
   : e.message;
 async function elevenVoice(i) {
   const key = $("keyIn").value.trim(), vid = $("voiceIdIn").value.trim();
@@ -1265,11 +1273,51 @@ async function inworldVoice(i) {
     c.times = times; c.src = "Inworld";
   } finally { c.busy = false; renderClipList(); }
 }
+async function fishVoice(i) {
+  const key = $("keyIn").value.trim().replace(/^Bearer\s+/i, ""), vid = $("voiceIdIn").value.trim();
+  if (!key) throw new Error("Paste your Fish Audio API key first."); if (!vid) throw new Error("Paste your Fish Audio voice ID first.");
+  const c = clips[i]; c.busy = true; renderClipList();
+  const model = $("vModel").value.slice(5);
+  const body = { text: c.text, reference_id: vid, format: "mp3", mp3_bitrate: 128, latency: "normal", language: "en",
+    prosody: { speed: Math.min(2, Math.max(.5, S.speed)), volume: 0 } };
+  const headers = { Authorization: "Bearer " + key, "Content-Type": "application/json", model };
+  const fail = async r => { const t = await r.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(`Fish Audio said ${r.status}: ${String(m).slice(0, 160)}`); };
+  try {
+    let audioBufs = [], words = [], starts = [], ends = [];
+    const r = await fetch("https://api.fish.audio/v1/tts/stream/with-timestamp", { method: "POST", headers, body: JSON.stringify(body) });
+    if (r.ok) {
+      // server-sent events: audio chunks + a cumulative word alignment per text chunk
+      const raw = await r.text(), snaps = new Map();
+      raw.split(/\r?\n/).forEach(line => {
+        if (!line.startsWith("data:")) return;
+        const d = line.slice(5).trim(); if (!d || d === "[DONE]") return;
+        let ev; try { ev = JSON.parse(d); } catch (e) { return; }
+        if (ev.audio_base64) audioBufs.push(new Uint8Array(b64ToBuf(ev.audio_base64)));
+        if (ev.alignment && ev.alignment.segments) snaps.set(ev.chunk_seq ?? 0, { off: ev.chunk_audio_offset_sec || 0, segs: ev.alignment.segments });
+      });
+      [...snaps.keys()].sort((a, b) => a - b).forEach(k => { const { off, segs } = snaps.get(k);
+        segs.forEach(sg => { words.push(String(sg.text)); starts.push(off + (+sg.start || 0)); ends.push(off + (+sg.end || +sg.start || 0)); }); });
+    } else if (r.status === 404 || r.status === 405) {
+      const r2 = await fetch("https://api.fish.audio/v1/tts", { method: "POST", headers, body: JSON.stringify(body) });
+      if (!r2.ok) await fail(r2);
+      audioBufs = [new Uint8Array(await r2.arrayBuffer())];
+    } else await fail(r);
+    if (!audioBufs.length) throw new Error("Fish Audio sent back no audio. Check the voice ID.");
+    const total = audioBufs.reduce((n, b) => n + b.length, 0), all = new Uint8Array(total); let o = 0;
+    audioBufs.forEach(b => { all.set(b, o); o += b.length; });
+    c.raw = all.buffer.slice(0); c.audio = await AC().decodeAudioData(all.buffer);
+    // word timing -> per-letter timing (letters inside a word are spread across that word)
+    const spaced = []; let ws = [], we = [];
+    words.forEach((w, k) => { if (k) { spaced.push(" "); ws.push(starts[k]); we.push(starts[k]); } spaced.push(w.trim()); ws.push(starts[k]); we.push(ends[k]); });
+    c.times = (words.length && wordsToChars(c.text, spaced, ws, we)) || spreadTimes(c.text, ...detectSpeech(c.audio));
+    c.src = "Fish Audio";
+  } finally { c.busy = false; renderClipList(); }
+}
 async function generateVoices() {
   const p = provOf($("vModel").value);
   if (p === "upload") { $("audioFile").click(); return; }
   if (busy) return; busy = true; setBusy(true);
-  const name = p === "inworld" ? "Inworld" : "ElevenLabs", fn = p === "inworld" ? inworldVoice : elevenVoice;
+  const name = PROV_NAME[p], fn = p === "inworld" ? inworldVoice : p === "fish" ? fishVoice : elevenVoice;
   try {
     for (let i = 0; i < clips.length; i++) { setStatus("vStatus", clips.length > 1 ? `Generating ${i + 1} of ${clips.length}…` : "Generating…"); await fn(i); }
     setStatus("vStatus", "Voice ready. Hit Listen or Preview.", "ok"); saveVoices(); syncTimingUI();
@@ -1713,7 +1761,7 @@ function restoreState() {
 if (IN_VIEWER) {
   $("exportWav").hidden = true;
   const p = document.createElement("p"); p.className = "vnote wide";
-  p.textContent = "This web link can't reach ElevenLabs or Inworld directly. Use the downloaded Prompt Studio file to generate voices, or pick Upload a recording.";
+  p.textContent = "This web link can't reach ElevenLabs, Inworld or Fish Audio directly. Use the downloaded Prompt Studio file to generate voices, or pick Upload a recording.";
   $("voiceBody").querySelector(".vgrid").prepend(p);
 }
 { const m = store.get("vModel"); if (m && [...$("vModel").options].some(o => o.value === m)) $("vModel").value = m; }
